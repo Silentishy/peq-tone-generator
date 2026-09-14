@@ -52,6 +52,23 @@ export interface Translations {
   liveFeedback: string;
   deleteFix: string;
 
+  // Music Audition
+  musicAuditionTitle: string;
+  musicAuditionSubtitle: string;
+  uploadMusicBtn: string;
+  uploadMusicDesc: string;
+  changeMusic: string;
+  playMusic: string;
+  pauseMusic: string;
+  loopTooltip: string;
+  rewind5s: string;
+  forward5s: string;
+  abCompareTitle: string;
+  abCompareDesc: string;
+  musicEqOn: string;
+  musicBypass: string;
+  noMusicLoaded: string;
+
   // Visualizer (Step 3)
   step3Title: string;
   step3Subtitle: string;
@@ -153,6 +170,23 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     liveFeedback: 'Live sound updated! Listen through your headphones.',
     deleteFix: 'Delete Fix',
 
+    // Music Audition
+    musicAuditionTitle: 'Audition on Your Music (A/B Test)',
+    musicAuditionSubtitle: 'Upload a favorite song to hear how your EQ fixes improve real music',
+    uploadMusicBtn: 'Upload Audio File',
+    uploadMusicDesc: 'Supports MP3, WAV, FLAC, AAC, M4A, OGG',
+    changeMusic: 'Change Song',
+    playMusic: 'PLAY MUSIC',
+    pauseMusic: 'PAUSE',
+    loopTooltip: 'Loop playback',
+    rewind5s: '-5s',
+    forward5s: '+5s',
+    abCompareTitle: 'Instant A/B Compare:',
+    abCompareDesc: 'Toggle back and forth while your music plays to hear before & after',
+    musicEqOn: 'EQ Applied (Clean & Smooth)',
+    musicBypass: 'Original Audio (Uncorrected)',
+    noMusicLoaded: 'No music loaded yet. Upload your favorite song to compare how your EQ fixes sound on real tracks.',
+
     // Visualizer
     step3Title: 'Live Frequency Response Curve',
     step3Subtitle: 'Click anywhere on curve to jump',
@@ -252,6 +286,23 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     widthWideDesc: '大范围整体提亮、增温或平缓微调',
     liveFeedback: '声音已实时更新！戴上耳机立即感受变化。',
     deleteFix: '删除此项修正',
+
+    // Music Audition
+    musicAuditionTitle: '音乐试听与 A/B 盲听对比',
+    musicAuditionSubtitle: '上传您常听的歌曲，试听 EQ 修正对真实音乐的音质改善效果',
+    uploadMusicBtn: '上传音频文件',
+    uploadMusicDesc: '支持 MP3, WAV, FLAC, AAC, M4A, OGG 等格式',
+    changeMusic: '更换歌曲',
+    playMusic: '播放音乐',
+    pauseMusic: '暂停播放',
+    loopTooltip: '单曲循环',
+    rewind5s: '-5秒',
+    forward5s: '+5秒',
+    abCompareTitle: '一键 A/B 切换对比：',
+    abCompareDesc: '播放音乐时反复点击切换，直观感受调音前后的音质对比',
+    musicEqOn: 'EQ 修正已生效 (声音更平滑自然)',
+    musicBypass: '原始音频 (未修正直通原声)',
+    noMusicLoaded: '尚未加载歌曲。请点击上方按钮从电脑中选择您熟悉的试音曲目。',
 
     // Visualizer
     step3Title: '步骤 3：实时频响修正曲线',

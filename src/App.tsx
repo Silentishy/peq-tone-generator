@@ -4,10 +4,11 @@ import { FrequencyScanner } from './components/FrequencyScanner';
 import { FrequencyFixerCard } from './components/FrequencyFixerCard';
 import { SimpleEQVisualizer } from './components/SimpleEQVisualizer';
 import { MyFixesList } from './components/MyFixesList';
+import { MusicAuditionCard } from './components/MusicAuditionCard';
 import { ExportModal } from './components/ExportModal';
 import { HelpModal } from './components/HelpModal';
 import { GitHubIcon } from './components/GitHubIcon';
-import { AudioEngine } from './audio/AudioEngine';
+import { AudioEngine, MusicState } from './audio/AudioEngine';
 import { EQFix } from './types/audio';
 import { useLanguage } from './context/LanguageContext';
 
@@ -23,6 +24,9 @@ export const App: React.FC = () => {
   const [isBypassed, setIsBypassed] = useState<boolean>(false);
   const [frequency, setFrequency] = useState<number>(1000);
   const [isAutoScanning, setIsAutoScanning] = useState<boolean>(false);
+
+  // Music Audition State
+  const [musicState, setMusicState] = useState<MusicState>(() => engine.getMusicState());
 
   // User's EQ Fixes List (loaded from localStorage if present)
   const [fixes, setFixes] = useState<EQFix[]>(() => {
@@ -44,14 +48,17 @@ export const App: React.FC = () => {
     } catch {}
   }, [fixes]);
 
-  // Sync engine frequency callback
+  // Sync engine frequency & music callbacks
   useEffect(() => {
     engine.setFrequencyCallback((freq) => {
       setFrequency(freq);
     });
+    engine.setMusicStateCallback((state) => {
+      setMusicState(state);
+    });
   }, [engine]);
 
-  // Master Audio Toggle
+  // Master Audio Toggle (Pure Tone)
   const handleToggleAudio = async () => {
     if (isAudioRunning) {
       engine.stop();
@@ -62,6 +69,28 @@ export const App: React.FC = () => {
       engine.rebuildFilterChain(fixes);
       setIsAudioRunning(true);
     }
+  };
+
+  // Music Player Handlers
+  const handleUploadMusicFile = (file: File) => {
+    engine.loadMusicFile(file);
+  };
+
+  const handleToggleMusicPlay = () => {
+    if (isAudioRunning) {
+      engine.stop();
+      setIsAudioRunning(false);
+      setIsAutoScanning(false);
+    }
+    engine.toggleMusic();
+  };
+
+  const handleSeekMusic = (sec: number) => {
+    engine.seekMusic(sec);
+  };
+
+  const handleToggleMusicLoop = () => {
+    engine.setMusicLoop(!musicState.isLooping);
   };
 
   // Frequency change
@@ -151,7 +180,7 @@ export const App: React.FC = () => {
       {/* Main Container */}
       <main className="flex-1 p-3 sm:p-5 lg:p-6 max-w-[1600px] w-full mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left Column: Frequency Scanner & On-The-Spot Fixer */}
+          {/* Left Column: Frequency Scanner & On-The-Spot Fixer & Music Audition */}
           <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-5">
             {/* Step 1: Frequency Scanner */}
             <section>
@@ -175,6 +204,20 @@ export const App: React.FC = () => {
                 onRemoveFix={handleRemoveFix}
                 isAudioRunning={isAudioRunning}
                 onStartAudio={handleToggleAudio}
+              />
+            </section>
+
+            {/* Step 3: Audition on Your Music & A/B Compare */}
+            <section>
+              <MusicAuditionCard
+                musicState={musicState}
+                onUploadFile={handleUploadMusicFile}
+                onTogglePlay={handleToggleMusicPlay}
+                onSeek={handleSeekMusic}
+                onToggleLoop={handleToggleMusicLoop}
+                isBypassed={isBypassed}
+                onToggleBypass={handleToggleBypass}
+                fixesCount={fixes.length}
               />
             </section>
           </div>

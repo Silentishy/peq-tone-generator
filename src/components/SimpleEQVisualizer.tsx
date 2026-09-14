@@ -62,6 +62,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     if (!ctx) return;
 
     let animId: number;
+    const fftData = new Uint8Array(512);
 
     const render = () => {
       const dpr = window.devicePixelRatio || 1;
@@ -73,6 +74,37 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
       // 1. Background Fill
       ctx.fillStyle = '#10141d';
       ctx.fillRect(0, 0, width, height);
+
+      // 1.5 Real-Time Spectrum Glow (RTA) for music or tone playback
+      if (engine.analyser && engine.getIsAnyAudioPlaying()) {
+        engine.analyser.getByteFrequencyData(fftData);
+        const sampleRate = engine.ctx?.sampleRate || 48000;
+        const nyquist = sampleRate / 2;
+        const binCount = fftData.length;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+
+        for (let px = 0; px < width; px += 3) {
+          const f = xToFreq(px, width);
+          const bin = Math.min(binCount - 1, Math.floor((f / nyquist) * binCount));
+          const val = fftData[bin] / 255.0; // 0 to 1
+          const barH = val * (height * 0.65);
+          ctx.lineTo(px, height - barH);
+        }
+
+        ctx.lineTo(width, height);
+        ctx.closePath();
+
+        const rtaGrad = ctx.createLinearGradient(0, height * 0.35, 0, height);
+        rtaGrad.addColorStop(0, 'rgba(0, 240, 255, 0.22)');
+        rtaGrad.addColorStop(0.5, 'rgba(99, 102, 241, 0.1)');
+        rtaGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+        ctx.fillStyle = rtaGrad;
+        ctx.fill();
+        ctx.restore();
+      }
 
       // 2. 0 dB Baseline (Flat Reference)
       const zeroY = gainToY(0, height, -12, 12);

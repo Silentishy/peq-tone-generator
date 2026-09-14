@@ -1,6 +1,15 @@
 import { EQFix } from '../types/audio';
 import { MIN_FREQ, MAX_FREQ } from '../utils/eqMath';
 
+export interface MusicState {
+  isLoaded: boolean;
+  isPlaying: boolean;
+  fileName: string;
+  currentTime: number;
+  duration: number;
+  isLooping: boolean;
+}
+
 export class AudioEngine {
   private static instance: AudioEngine | null = null;
 
@@ -13,8 +22,16 @@ export class AudioEngine {
   private stereoBus: GainNode | null = null;
   private sourceGain: GainNode | null = null;
 
-  // Single pure tone oscillator
+  // Pure tone oscillator
   private oscNode: OscillatorNode | null = null;
+
+  // Music audio player
+  private audioElement: HTMLAudioElement | null = null;
+  private mediaSourceNode: MediaElementAudioSourceNode | null = null;
+  private musicFileName: string = '';
+  private isMusicLooping: boolean = true;
+  private isMusicPlaying: boolean = false;
+  private onMusicStateChange?: (state: MusicState) => void;
 
   // Filter chain
   private filterNodes: Map<string, BiquadFilterNode> = new Map();
@@ -22,7 +39,7 @@ export class AudioEngine {
   private filterOutputNode: GainNode | null = null;
 
   // State
-  private isRunning: boolean = false;
+  private isRunning: boolean = false; // Tone state
   private isBypassed: boolean = false; // A/B compare
   private volume: number = 0.25; // Safe default volume
   private frequency: number = 1000;
@@ -77,7 +94,7 @@ export class AudioEngine {
     this.sourceGain.channelCount = 2;
     this.sourceGain.channelCountMode = 'explicit';
     this.sourceGain.channelInterpretation = 'speakers';
-    this.sourceGain.gain.setValueAtTime(0, this.ctx.currentTime);
+    this.sourceGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
 
     this.filterInputNode = this.ctx.createGain();
     this.filterInputNode.channelCount = 2;
@@ -96,9 +113,34 @@ export class AudioEngine {
     this.analyser.connect(this.masterGain);
     this.masterGain.connect(this.limiter);
     this.limiter.connect(this.ctx.destination);
+
+    // Initialize media player element connected to Web Audio graph
+    if (!this.audioElement) {
+      this.audioElement = new Audio();
+      this.audioElement.loop = this.isMusicLooping;
+      this.audioElement.crossOrigin = 'anonymous';
+
+      this.mediaSourceNode = this.ctx.createMediaElementSource(this.audioElement);
+      this.mediaSourceNode.connect(this.sourceGain);
+
+      this.audioElement.addEventListener('timeupdate', () => this.notifyMusicState());
+      this.audioElement.addEventListener('loadedmetadata', () => this.notifyMusicState());
+      this.audioElement.addEventListener('play', () => {
+        this.isMusicPlaying = true;
+        this.notifyMusicState();
+      });
+      this.audioElement.addEventListener('pause', () => {
+        this.isMusicPlaying = false;
+        this.notifyMusicState();
+      });
+      this.audioElement.addEventListener('ended', () => {
+        this.isMusicPlaying = false;
+        this.notifyMusicState();
+      });
+    }
   }
 
-  // --- Start / Stop Audio ---
+  // --- Start / Stop Pure Tone ---
   public async start(): Promise<void> {
     this.initContext();
     if (!this.ctx) return;
@@ -107,16 +149,13 @@ export class AudioEngine {
       await this.ctx.resume();
     }
 
+    // Pause music if currently playing so tone is clean and audible
+    if (this.isMusicPlaying) {
+      this.pauseMusic();
+    }
+
     this.startOscillator();
     this.rebuildFilterChain(this.currentFixes);
-
-    // Anti-pop smooth fade in
-    if (this.sourceGain) {
-      const now = this.ctx.currentTime;
-      this.sourceGain.gain.cancelScheduledValues(now);
-      this.sourceGain.gain.setValueAtTime(0, now);
-      this.sourceGain.gain.linearRampToValueAtTime(1.0, now + 0.04);
-    }
 
     this.isRunning = true;
   }
@@ -125,19 +164,8 @@ export class AudioEngine {
     if (!this.ctx || !this.isRunning) return;
 
     this.stopAutoScan();
-
-    // Anti-pop smooth fade out
-    if (this.sourceGain) {
-      const now = this.ctx.currentTime;
-      this.sourceGain.gain.cancelScheduledValues(now);
-      this.sourceGain.gain.setValueAtTime(this.sourceGain.gain.value, now);
-      this.sourceGain.gain.linearRampToValueAtTime(0, now + 0.03);
-    }
-
-    setTimeout(() => {
-      this.stopOscillator();
-      this.isRunning = false;
-    }, 35);
+    this.stopOscillator();
+    this.isRunning = false;
   }
 
   public toggle(): Promise<void> | void {
@@ -150,6 +178,10 @@ export class AudioEngine {
 
   public getIsRunning(): boolean {
     return this.isRunning;
+  }
+
+  public getIsAnyAudioPlaying(): boolean {
+    return this.isRunning || this.isMusicPlaying;
   }
 
   private startOscillator() {
@@ -361,4 +393,100 @@ export class AudioEngine {
     this.setFrequency(Math.round(nextFreq * 10) / 10, true);
     this.scanRafId = requestAnimationFrame(this.runScanLoop);
   };
+
+  // --- Music Upload & Audition Player Engine ---
+  public setMusicStateCallback(cb: (state: MusicState) => void) {
+    this.onMusicStateChange = cb;
+  }
+
+  private notifyMusicState() {
+    if (this.onMusicStateChange && this.audioElement) {
+      this.onMusicStateChange({
+        isLoaded: !!this.musicFileName,
+        isPlaying: this.isMusicPlaying,
+        fileName: this.musicFileName,
+        currentTime: this.audioElement.currentTime || 0,
+        duration: this.audioElement.duration || 0,
+        isLooping: this.isMusicLooping,
+      });
+    }
+  }
+
+  public loadMusicFile(file: File): void {
+    this.initContext();
+    this.musicFileName = file.name;
+    const url = URL.createObjectURL(file);
+    if (this.audioElement) {
+      this.audioElement.src = url;
+      this.audioElement.load();
+    }
+    this.notifyMusicState();
+  }
+
+  public async playMusic(): Promise<void> {
+    this.initContext();
+    if (!this.ctx || !this.audioElement) return;
+
+    if (this.ctx.state === 'suspended') {
+      await this.ctx.resume();
+    }
+
+    // Stop tone oscillator and auto scan if active
+    if (this.isRunning) {
+      this.stop();
+    }
+
+    this.rebuildFilterChain(this.currentFixes);
+
+    try {
+      await this.audioElement.play();
+      this.isMusicPlaying = true;
+      this.notifyMusicState();
+    } catch (err) {
+      console.warn('Audio playback error:', err);
+    }
+  }
+
+  public pauseMusic(): void {
+    if (this.audioElement) {
+      this.audioElement.pause();
+    }
+    this.isMusicPlaying = false;
+    this.notifyMusicState();
+  }
+
+  public toggleMusic(): Promise<void> | void {
+    if (this.isMusicPlaying) {
+      this.pauseMusic();
+    } else {
+      return this.playMusic();
+    }
+  }
+
+  public seekMusic(seconds: number): void {
+    if (this.audioElement && !isNaN(seconds)) {
+      const clamped = Math.max(0, Math.min(this.audioElement.duration || 0, seconds));
+      this.audioElement.currentTime = clamped;
+      this.notifyMusicState();
+    }
+  }
+
+  public setMusicLoop(loop: boolean): void {
+    this.isMusicLooping = loop;
+    if (this.audioElement) {
+      this.audioElement.loop = loop;
+    }
+    this.notifyMusicState();
+  }
+
+  public getMusicState(): MusicState {
+    return {
+      isLoaded: !!this.musicFileName,
+      isPlaying: this.isMusicPlaying,
+      fileName: this.musicFileName,
+      currentTime: this.audioElement?.currentTime || 0,
+      duration: this.audioElement?.duration || 0,
+      isLooping: this.isMusicLooping,
+    };
+  }
 }
