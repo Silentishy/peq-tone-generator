@@ -240,13 +240,29 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden border border-studio-border bg-studio-surface shadow-xl cursor-crosshair select-none"
-    >
-      <canvas ref={canvasRef} onClick={handleCanvasClick} className="w-full h-full block" />
-      <div className="absolute top-2 left-3 pointer-events-none text-[11px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-700/60">
-        EQ Curve Overview • Click anywhere on graph to jump
+    <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center border border-cyan-500/40">
+            3
+          </span>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
+            Live Frequency Response Curve
+          </h2>
+        </div>
+        <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
+          Click anywhere on curve to jump
+        </span>
+      </div>
+
+      <div
+        ref={containerRef}
+        className="relative w-full h-52 sm:h-64 lg:h-72 rounded-xl overflow-hidden border border-studio-border bg-studio-surface shadow-inner cursor-crosshair select-none"
+      >
+        <canvas ref={canvasRef} onClick={handleCanvasClick} className="w-full h-full block" />
+        <div className="absolute top-2 left-3 pointer-events-none text-[10px] font-mono text-slate-400 bg-slate-900/85 px-2 py-0.5 rounded border border-slate-700/60">
+          Visual Preview • 20 Hz – 20 kHz
+        </div>
       </div>
     </div>
   );

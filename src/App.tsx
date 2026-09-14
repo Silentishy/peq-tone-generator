@@ -146,48 +146,59 @@ export const App: React.FC = () => {
       />
 
       {/* Main Container */}
-      <main className="flex-1 p-3 sm:p-5 max-w-4xl w-full mx-auto flex flex-col gap-4">
-        {/* Step 1: Frequency Scanner */}
-        <section>
-          <FrequencyScanner
-            frequency={frequency}
-            onChangeFrequency={handleChangeFrequency}
-            isAutoScanning={isAutoScanning}
-            onToggleAutoScan={handleToggleAutoScan}
-            isAudioRunning={isAudioRunning}
-            onStartAudio={handleToggleAudio}
-          />
-        </section>
+      <main className="flex-1 p-3 sm:p-5 lg:p-6 max-w-[1600px] w-full mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Left Column: Frequency Scanner & On-The-Spot Fixer */}
+          <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-5">
+            {/* Step 1: Frequency Scanner */}
+            <section>
+              <FrequencyScanner
+                frequency={frequency}
+                onChangeFrequency={handleChangeFrequency}
+                isAutoScanning={isAutoScanning}
+                onToggleAutoScan={handleToggleAutoScan}
+                isAudioRunning={isAudioRunning}
+                onStartAudio={handleToggleAudio}
+              />
+            </section>
 
-        {/* Step 2: Frequency Fixer (On The Spot Adjustment) */}
-        <section>
-          <FrequencyFixerCard
-            currentFreq={frequency}
-            fixes={fixes}
-            onSaveFix={handleSaveFix}
-            onUpdateFix={handleUpdateFix}
-            onRemoveFix={handleRemoveFix}
-            isAudioRunning={isAudioRunning}
-            onStartAudio={handleToggleAudio}
-          />
-        </section>
+            {/* Step 2: Frequency Fixer (On The Spot Adjustment) */}
+            <section>
+              <FrequencyFixerCard
+                currentFreq={frequency}
+                fixes={fixes}
+                onSaveFix={handleSaveFix}
+                onUpdateFix={handleUpdateFix}
+                onRemoveFix={handleRemoveFix}
+                isAudioRunning={isAudioRunning}
+                onStartAudio={handleToggleAudio}
+              />
+            </section>
+          </div>
 
-        {/* Step 3: Visual Curve & My Fixes Overview */}
-        <section className="flex flex-col gap-4">
-          <SimpleEQVisualizer
-            fixes={fixes}
-            currentFreq={frequency}
-            onSelectFrequency={handleChangeFrequency}
-            isAudioRunning={isAudioRunning}
-          />
+          {/* Right Column: Visual Curve & My Fixes Overview (Sticky on Wide Screens) */}
+          <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-5 lg:sticky lg:top-4">
+            {/* Step 3: Live EQ Response Curve */}
+            <section>
+              <SimpleEQVisualizer
+                fixes={fixes}
+                currentFreq={frequency}
+                onSelectFrequency={handleChangeFrequency}
+                isAudioRunning={isAudioRunning}
+              />
+            </section>
 
-          <MyFixesList
-            fixes={fixes}
-            onSelectFix={handleChangeFrequency}
-            onRemoveFix={handleRemoveFix}
-            onClearAll={handleClearAllFixes}
-          />
-        </section>
+            {/* Step 4: Active Fixes Ledger */}
+            <section>
+              <MyFixesList
+                fixes={fixes}
+                onSelectFix={handleChangeFrequency}
+                onRemoveFix={handleRemoveFix}
+                onClearAll={handleClearAllFixes}
+              />
+            </section>
+          </div>
+        </div>
       </main>
 
       {/* Footer */}
