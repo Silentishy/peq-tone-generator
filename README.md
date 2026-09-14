@@ -5,7 +5,7 @@
 ---
 
 ## 🚀 Live Demo
-**[Launch App on GitHub Pages](https://fishy00000.github.io/peq-tone-generator/)**
+**[Launch App on GitHub Pages](https://silentishy.github.io/peq-tone-generator/)**
 
 ---
 
@@ -38,7 +38,7 @@ This app is designed specifically for **regular listeners** who just want their 
 
 ## 🛠️ Local Development
 ```bash
-git clone https://github.com/Fishy00000/peq-tone-generator.git
+git clone https://github.com/Silentishy/peq-tone-generator.git
 cd peq-tone-generator
 npm install
 npm run dev
