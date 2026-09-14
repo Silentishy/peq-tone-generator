@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { EQFix } from '../types/audio';
 import { AudioEngine } from '../audio/AudioEngine';
 import { freqToX, xToFreq, gainToY, MIN_FREQ, MAX_FREQ, MIN_GAIN, MAX_GAIN } from '../utils/eqMath';
+import { useLanguage } from '../context/LanguageContext';
 
 interface SimpleEQVisualizerProps {
   fixes: EQFix[];
@@ -25,11 +26,21 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   onSelectFrequency,
   isAudioRunning,
 }) => {
+  const { t, lang } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engine = AudioEngine.getInstance();
   const freqPointsRef = useRef<Float32Array | null>(null);
   const numPoints = 256;
+
+  const freqLandmarks = [
+    { freq: 60, label: lang === 'zh' ? '低频 (60)' : 'Bass (60)' },
+    { freq: 250, label: lang === 'zh' ? '中低 (250)' : 'Low-Mid (250)' },
+    { freq: 1000, label: lang === 'zh' ? '人声 (1k)' : 'Vocals (1k)' },
+    { freq: 4000, label: lang === 'zh' ? '临场 (4k)' : 'Presence (4k)' },
+    { freq: 8000, label: lang === 'zh' ? '高频 (8k)' : 'Treble (8k)' },
+    { freq: 16000, label: lang === 'zh' ? '极高 (16k)' : 'Air (16k)' },
+  ];
 
   // Initialize frequency sample points
   useEffect(() => {
@@ -77,10 +88,10 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
       ctx.fillStyle = '#64748b';
       ctx.font = '10px ui-monospace, monospace';
       ctx.textAlign = 'right';
-      ctx.fillText('0 dB (Flat)', width - 8, zeroY - 5);
+      ctx.fillText(t.flatReference, width - 8, zeroY - 5);
 
       // 3. Frequency landmark vertical grid lines
-      FREQ_LANDMARKS.forEach(({ freq, label }) => {
+      freqLandmarks.forEach(({ freq, label }) => {
         const x = freqToX(freq, width);
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1;
@@ -247,11 +258,11 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
             3
           </span>
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-            Live Frequency Response Curve
+            {t.step3Title}
           </h2>
         </div>
         <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
-          Click anywhere on curve to jump
+          {t.step3Subtitle}
         </span>
       </div>
 
@@ -261,7 +272,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
       >
         <canvas ref={canvasRef} onClick={handleCanvasClick} className="w-full h-full block" />
         <div className="absolute top-2 left-3 pointer-events-none text-[10px] font-mono text-slate-400 bg-slate-900/85 px-2 py-0.5 rounded border border-slate-700/60">
-          Visual Preview • 20 Hz – 20 kHz
+          {t.visualPreview}
         </div>
       </div>
     </div>

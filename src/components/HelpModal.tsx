@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Headphones, Search, Sliders, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, Headphones } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -7,6 +8,7 @@ interface HelpModalProps {
 }
 
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -19,7 +21,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center space-x-2">
             <Headphones className="w-5 h-5 text-cyan-400" />
             <h3 className="font-bold text-slate-100 text-sm">
-              How to Fix Headphone & Speaker Sound
+              {t.helpModalTitle}
             </h3>
           </div>
           <button
@@ -37,10 +39,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h4 className="font-bold text-slate-100 text-sm mb-0.5">
-                Put On Your Headphones & Hit "Play Tone"
+                {t.helpStep1Title}
               </h4>
               <p className="text-slate-400">
-                Ensure volume is at a moderate, comfortable level. You'll hear a smooth, continuous pure tone.
+                {t.helpStep1Desc}
               </p>
             </div>
           </div>
@@ -51,10 +53,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h4 className="font-bold text-slate-100 text-sm mb-0.5">
-                Scan Frequencies to Find Peaks or Dips
+                {t.helpStep2Title}
               </h4>
               <p className="text-slate-400">
-                Slowly drag the slider from 20 Hz to 20,000 Hz, or click <strong>Auto-Scan</strong>. Listen carefully: does any frequency suddenly sound <em>shriekingly loud</em> (a harsh treble peak) or <em>barely audible</em> (a recessed dip)?
+                {t.helpStep2Desc}
               </p>
             </div>
           </div>
@@ -65,10 +67,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h4 className="font-bold text-slate-100 text-sm mb-0.5">
-                Adjust dB On The Spot
+                {t.helpStep3Title}
               </h4>
               <p className="text-slate-400">
-                Hit pause at that frequency! Click <strong>"Too Loud (Cut Peak)"</strong> and adjust the dB slider down until that pitch sounds equal in volume to the frequencies around it.
+                {t.helpStep3Desc}
               </p>
             </div>
           </div>
@@ -79,10 +81,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h4 className="font-bold text-slate-100 text-sm mb-0.5">
-                Compare & Export
+                {t.helpStep4Title}
               </h4>
               <p className="text-slate-400">
-                Use the <strong>A/B Compare</strong> button to hear the difference between your fixes and original sound. When happy, click <strong>Export Fixes</strong> and paste into Equalizer APO, Peace, or Wavelet!
+                {t.helpStep4Desc}
               </p>
             </div>
           </div>
@@ -91,7 +93,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             onClick={onClose}
             className="mt-2 w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs transition"
           >
-            Got It, Let's Start Listening!
+            {t.helpCloseBtn}
           </button>
         </div>
       </div>

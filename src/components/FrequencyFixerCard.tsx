@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { EQFix, FilterWidth } from '../types/audio';
 import { WIDTH_MAP, MIN_GAIN, MAX_GAIN } from '../utils/eqMath';
+import { useLanguage } from '../context/LanguageContext';
 
 interface FrequencyFixerCardProps {
   currentFreq: number;
@@ -30,6 +31,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
   isAudioRunning,
   onStartAudio,
 }) => {
+  const { t } = useLanguage();
   // Check if there is an existing fix close to this frequency (within 3% tolerance)
   const existingFix = fixes.find(
     (f) => Math.abs(f.frequency - currentFreq) / currentFreq < 0.035
@@ -100,6 +102,12 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
     }
   };
 
+  const widthOptions: { key: FilterWidth; title: string; desc: string }[] = [
+    { key: 'narrow', title: t.widthNarrowTitle, desc: t.widthNarrowDesc },
+    { key: 'normal', title: t.widthNormalTitle, desc: t.widthNormalDesc },
+    { key: 'wide', title: t.widthWideTitle, desc: t.widthWideDesc },
+  ];
+
   return (
     <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col gap-4">
       {/* Header */}
@@ -110,18 +118,18 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
           </span>
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
             <Sliders className="w-4 h-4 text-cyan-400" />
-            Fix This Frequency ({Math.round(currentFreq)} Hz)
+            {t.step2Title} ({Math.round(currentFreq)} Hz)
           </h2>
         </div>
 
         {existingFix ? (
           <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Fix Active: {existingFix.gain >= 0 ? `+${existingFix.gain}` : existingFix.gain} dB
+            {t.fixActive}: {existingFix.gain >= 0 ? `+${existingFix.gain}` : existingFix.gain} dB
           </span>
         ) : (
           <span className="text-xs text-slate-400">
-            How does this frequency sound compared to the rest?
+            {t.step2Subtitle}
           </span>
         )}
       </div>
@@ -138,7 +146,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
           }`}
         >
           <TrendingDown className="w-4 h-4 text-rose-400" />
-          <span>TOO LOUD (CUT PEAK)</span>
+          <span>{t.tooLoudBtn}</span>
         </button>
 
         {/* Too Quiet (Dip Boost) */}
@@ -151,7 +159,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
           }`}
         >
           <TrendingUp className="w-4 h-4 text-sky-400" />
-          <span>TOO QUIET (BOOST DIP)</span>
+          <span>{t.tooQuietBtn}</span>
         </button>
 
         {/* Sounds Normal / Remove Fix */}
@@ -167,7 +175,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
           }`}
         >
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>SOUNDS NORMAL (NO FIX)</span>
+          <span>{t.soundsNormalBtn}</span>
         </button>
       </div>
 
@@ -178,7 +186,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-300">
-                Loudness Adjustment (dB):
+                {t.gainLabel}
               </span>
               <span
                 className={`text-base font-mono font-black ${
@@ -201,7 +209,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
 
             {/* Quick dB Presets */}
             <div className="flex items-center justify-between text-xs font-mono text-slate-400 pt-1">
-              <span className="text-[11px] text-slate-500">Quick:</span>
+              <span className="text-[11px] text-slate-500">{t.quickPresets}</span>
               <button
                 onClick={() => handleGainChange(-6)}
                 className="px-2 py-0.5 rounded bg-studio-panel hover:bg-slate-700 text-rose-300"
@@ -250,25 +258,24 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
           {/* Width / Sharpness Options */}
           <div>
             <span className="text-xs font-semibold text-slate-300 block mb-2">
-              Filter Width:
+              {t.widthLabel}
             </span>
             <div className="grid grid-cols-3 gap-2">
-              {(['narrow', 'normal', 'wide'] as FilterWidth[]).map((wKey) => {
-                const info = WIDTH_MAP[wKey];
-                const isSelected = width === wKey;
+              {widthOptions.map((opt) => {
+                const isSelected = width === opt.key;
                 return (
                   <button
-                    key={wKey}
-                    onClick={() => handleWidthChange(wKey)}
+                    key={opt.key}
+                    onClick={() => handleWidthChange(opt.key)}
                     className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
                       isSelected
                         ? 'bg-cyan-500/15 border-cyan-400 text-cyan-200'
                         : 'bg-studio-panel border-studio-border text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    <span className="text-xs font-bold block">{info.label}</span>
+                    <span className="text-xs font-bold block">{opt.title}</span>
                     <span className="text-[11px] text-slate-400 mt-1 leading-tight block">
-                      {info.desc}
+                      {opt.desc}
                     </span>
                   </button>
                 );
@@ -280,7 +287,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
           <div className="flex items-center justify-between pt-2 border-t border-studio-border/60">
             <span className="text-xs text-emerald-400 flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5" />
-              Live sound updated! Listen through your headphones.
+              {t.liveFeedback}
             </span>
 
             <button
@@ -288,7 +295,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
               className="flex items-center space-x-1 text-xs text-rose-400 hover:text-rose-300 transition"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete Fix</span>
+              <span>{t.deleteFix}</span>
             </button>
           </div>
         </div>

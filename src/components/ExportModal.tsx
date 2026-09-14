@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Copy, Check, Download, FileText, Smartphone, Monitor, Sliders } from 'lucide-react';
 import { EQFix } from '../types/audio';
 import { exportToEqualizerAPO, exportToWavelet, exportToTable } from '../utils/eqMath';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface ExportModalProps {
 type TabType = 'apo' | 'wavelet' | 'table';
 
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, fixes }) => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>('apo');
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -19,27 +21,24 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, fixes
 
   let exportContent = '';
   let fileName = 'my_headphone_eq.txt';
-  let appTitle = 'Equalizer APO / Peace';
-  let instructions = '';
+  let appTitle = t.apoTitle;
+  let instructions = t.apoDesc;
 
   if (activeTab === 'apo') {
     exportContent = exportToEqualizerAPO(fixes);
     fileName = 'peace_config.txt';
-    appTitle = 'Equalizer APO & Peace GUI (Windows)';
-    instructions =
-      'Open Peace GUI or Equalizer APO. Paste these lines into your config file or type them into the Peace parametric sliders.';
+    appTitle = t.apoTitle;
+    instructions = t.apoDesc;
   } else if (activeTab === 'wavelet') {
     exportContent = exportToWavelet(fixes);
     fileName = 'wavelet_eq.txt';
-    appTitle = 'Wavelet & Poweramp (Android)';
-    instructions =
-      'Import this file into Wavelet (AutoEq import) or Poweramp Equalizer to apply these corrections system-wide on your phone.';
+    appTitle = t.waveletTitle;
+    instructions = t.waveletDesc;
   } else {
     exportContent = exportToTable(fixes);
     fileName = 'eq_settings.txt';
-    appTitle = 'Universal Table (SoundSource, eqMac, Qudelix-5K, MiniDSP)';
-    instructions =
-      'Enter these exact Frequency, Gain, and Q numbers into SoundSource, eqMac, Apple Music EQ, or your DAC/Amp hardware.';
+    appTitle = t.tableTitle;
+    instructions = t.tableDesc;
   }
 
   const handleCopy = () => {
@@ -69,7 +68,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, fixes
           <div className="flex items-center space-x-2">
             <FileText className="w-5 h-5 text-cyan-400" />
             <h3 className="font-bold text-slate-100 text-sm">
-              Export Your EQ Fixes ({fixes.length} Applied)
+              {t.exportModalTitle} ({fixes.length})
             </h3>
           </div>
           <button
@@ -91,7 +90,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, fixes
             }`}
           >
             <Monitor className="w-3.5 h-3.5" />
-            <span>Windows (Peace / APO)</span>
+            <span>{t.tabWindows}</span>
           </button>
 
           <button
@@ -103,7 +102,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, fixes
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Android (Wavelet)</span>
+            <span>{t.tabAndroid}</span>
           </button>
 
           <button
@@ -115,7 +114,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, fixes
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>Mac & Hardware Table</span>
+            <span>{t.tabUniversal}</span>
           </button>
         </div>
 
@@ -141,7 +140,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, fixes
               className="flex items-center space-x-1.5 px-3 py-2 bg-studio-surface hover:bg-slate-700 border border-studio-border rounded-xl text-xs text-slate-300 transition"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Download File</span>
+              <span>{t.downloadFile}</span>
             </button>
 
             <button
@@ -149,7 +148,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, fixes
               className="flex items-center space-x-1.5 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-cyan-950/40 transition active:scale-95"
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copied to Clipboard!' : 'Copy to Clipboard'}</span>
+              <span>{copied ? t.copiedSuccess : t.copyClipboard}</span>
             </button>
           </div>
         </div>

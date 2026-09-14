@@ -12,18 +12,24 @@ export interface EQFix {
 
 export interface FrequencyZone {
   name: string;
+  nameZh?: string;
   minFreq: number;
   maxFreq: number;
   description: string;
+  descriptionZh?: string;
   commonProblems: string;
+  commonProblemsZh?: string;
   typicalFix: string;
+  typicalFixZh?: string;
   color: string;
 }
 
 export interface FrequencyLandmark {
   name: string;
+  nameZh?: string;
   exactFreq: number; // Exact frequency in Hz (e.g. 5800)
   category: 'all' | 'bass' | 'mids' | 'treble' | 'air';
   desc: string;
+  descZh?: string;
   color: string;
 }

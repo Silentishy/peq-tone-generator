@@ -9,10 +9,12 @@ import { HelpModal } from './components/HelpModal';
 import { GitHubIcon } from './components/GitHubIcon';
 import { AudioEngine } from './audio/AudioEngine';
 import { EQFix } from './types/audio';
+import { useLanguage } from './context/LanguageContext';
 
 const STORAGE_KEY = 'peq_fixes_v1';
 
 export const App: React.FC = () => {
+  const { t } = useLanguage();
   const engine = AudioEngine.getInstance();
 
   // Audio State
@@ -125,7 +127,7 @@ export const App: React.FC = () => {
 
   // Clear all fixes
   const handleClearAllFixes = () => {
-    if (window.confirm('Clear all applied EQ fixes and start fresh?')) {
+    if (window.confirm(t.confirmClear)) {
       setFixes([]);
       engine.rebuildFilterChain([]);
     }
@@ -205,7 +207,7 @@ export const App: React.FC = () => {
       {/* Footer */}
       <footer className="border-t border-studio-border/60 py-3 px-6 bg-studio-surface/50 text-xs text-slate-500 font-mono">
         <div className="max-w-[1600px] mx-auto w-full flex flex-wrap justify-between items-center gap-2">
-          <span>Headphone & Speaker EQ Fixer • Equalizer APO, Wavelet, & Poweramp Ready</span>
+          <span>{t.footerText}</span>
           <a
             href="https://github.com/Silentishy/peq-tone-generator"
             target="_blank"
@@ -213,7 +215,7 @@ export const App: React.FC = () => {
             className="inline-flex items-center space-x-1.5 text-slate-400 hover:text-cyan-300 transition"
           >
             <GitHubIcon className="w-3.5 h-3.5" />
-            <span>GitHub Repository</span>
+            <span>{t.githubRepo}</span>
           </a>
         </div>
       </footer>

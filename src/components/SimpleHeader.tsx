@@ -9,8 +9,10 @@ import {
   Headphones,
   CheckCircle2,
   HelpCircle,
+  Languages as LanguagesIcon,
 } from 'lucide-react';
 import { GitHubIcon } from './GitHubIcon';
+import { useLanguage } from '../context/LanguageContext';
 
 interface SimpleHeaderProps {
   isAudioRunning: boolean;
@@ -35,6 +37,8 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
   onOpenExport,
   onOpenHelp,
 }) => {
+  const { t, lang, toggleLang } = useLanguage();
+
   return (
     <header className="bg-studio-surface border-b border-studio-border px-4 lg:px-6 py-3 text-slate-100 shadow-md">
       <div className="max-w-[1600px] w-full mx-auto flex flex-wrap items-center justify-between gap-3">
@@ -46,18 +50,18 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="font-bold text-base tracking-tight text-white">
-                Headphone & Speaker EQ Fixer
+                {t.appTitle}
               </h1>
               <button
                 onClick={onOpenHelp}
                 className="text-slate-400 hover:text-cyan-300 transition"
-                title="How to use this app"
+                title={t.helpTooltip}
               >
                 <HelpCircle className="w-4 h-4" />
               </button>
             </div>
             <p className="text-xs text-slate-400">
-              Find harsh peaks or quiet dips, level the dB, and export to your EQ app.
+              {t.appSubtitle}
             </p>
           </div>
         </div>
@@ -76,12 +80,12 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
             {isAudioRunning ? (
               <>
                 <Square className="w-4 h-4 fill-current" />
-                <span>STOP TONE</span>
+                <span>{t.stopTone}</span>
               </>
             ) : (
               <>
                 <Play className="w-4 h-4 fill-current" />
-                <span>PLAY TONE</span>
+                <span>{t.playTone}</span>
               </>
             )}
           </button>
@@ -103,23 +107,33 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
               value={volume}
               onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
               className="w-20 sm:w-28 h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-cyan-400"
-              title="Volume slider"
+              title={t.volume}
             />
             <span className="text-xs font-mono text-slate-300 w-9 text-right">
               {Math.round(volume * 100)}%
             </span>
             <div
               className="hidden sm:flex items-center text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-              title="Hardware ear safety limiter is active to protect against accidental loud volume"
+              title={t.safeTooltip}
             >
               <ShieldCheck className="w-3 h-3 mr-1" />
-              SAFE
+              {t.safeLimit}
             </div>
           </div>
         </div>
 
-        {/* Right: A/B Compare Toggle & Export Button */}
+        {/* Right: Language Toggle, A/B Compare Toggle & Export Button */}
         <div className="flex items-center space-x-2">
+          {/* Language Switch Button */}
+          <button
+            onClick={toggleLang}
+            className="flex items-center space-x-1 px-2.5 py-2 rounded-xl bg-studio-panel hover:bg-slate-700 text-slate-300 hover:text-white border border-studio-border text-xs font-medium transition active:scale-95"
+            title={lang === 'en' ? '切换为中文界面' : 'Switch to English'}
+          >
+            <LanguagesIcon className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="font-mono font-bold">{lang === 'en' ? '中文' : 'EN'}</span>
+          </button>
+
           {/* A/B Compare Switch */}
           <button
             onClick={onToggleBypass}
@@ -128,10 +142,10 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
                 ? 'bg-amber-500/15 border-amber-400 text-amber-300 font-bold'
                 : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
             }`}
-            title="Toggle to compare with original sound without fixes"
+            title={t.bypassTooltip}
           >
             <span className="w-2 h-2 rounded-full bg-current inline-block" />
-            <span>{isBypassed ? 'Original (Bypass)' : 'EQ Fixes ON'}</span>
+            <span>{isBypassed ? t.bypassOn : t.bypassOff}</span>
           </button>
 
           {/* Export Button */}
@@ -140,7 +154,7 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
             className="flex items-center space-x-1.5 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-cyan-950/40 transition active:scale-95"
           >
             <Share2 className="w-3.5 h-3.5" />
-            <span>Export Fixes</span>
+            <span>{t.exportFixes}</span>
             {fixesCount > 0 && (
               <span className="ml-1 px-1.5 py-0.2 bg-slate-950 text-cyan-300 rounded-full text-[10px] font-mono">
                 {fixesCount}

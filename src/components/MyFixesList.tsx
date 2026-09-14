@@ -2,6 +2,7 @@ import React from 'react';
 import { Trash2, Volume2, ListChecks, ArrowRight } from 'lucide-react';
 import { EQFix } from '../types/audio';
 import { WIDTH_MAP } from '../utils/eqMath';
+import { useLanguage } from '../context/LanguageContext';
 
 interface MyFixesListProps {
   fixes: EQFix[];
@@ -16,6 +17,15 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
   onRemoveFix,
   onClearAll,
 }) => {
+  const { t, lang } = useLanguage();
+
+  const getWidthLabel = (w: 'narrow' | 'normal' | 'wide') => {
+    if (lang === 'zh') {
+      return w === 'narrow' ? '窄频' : w === 'normal' ? '标准' : '宽频';
+    }
+    return WIDTH_MAP[w].label;
+  };
+
   return (
     <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-3">
       <div className="flex items-center justify-between border-b border-studio-border/60 pb-3">
@@ -25,7 +35,7 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
           </span>
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
             <ListChecks className="w-4 h-4 text-cyan-400" />
-            My EQ Fixes ({fixes.length})
+            {t.step4Title} ({fixes.length})
           </h2>
         </div>
 
@@ -35,20 +45,20 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
             className="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear All</span>
+            <span>{t.clearAll}</span>
           </button>
         )}
       </div>
 
       {fixes.length === 0 ? (
         <div className="py-6 text-center text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
-          <p className="max-w-md text-slate-400">
-            No fixes created yet! Use <strong className="text-cyan-300">Step 1</strong> to scan through frequencies. When a spot sounds noticeably piercing or quiet, stop and adjust it in <strong className="text-cyan-300">Step 2</strong>.
+          <p className="max-w-md text-slate-400 leading-relaxed">
+            {t.noFixesYet}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1 scrollbar-thin">
-          {fixes.map((fix, idx) => {
+          {fixes.map((fix) => {
             const isCut = fix.gain < 0;
             return (
               <div
@@ -75,7 +85,7 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
                   </div>
 
                   <span className="text-[11px] text-slate-400 mt-0.5">
-                    {isCut ? 'Peak Cut' : 'Dip Boost'} • {WIDTH_MAP[fix.width].label} Width (Q: {fix.q.toFixed(2)})
+                    {isCut ? t.peakCut : t.dipBoost} • {getWidthLabel(fix.width)} (Q: {fix.q.toFixed(2)})
                   </span>
                 </div>
 
@@ -83,14 +93,14 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
                   <button
                     onClick={() => onSelectFix(fix.frequency)}
                     className="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-cyan-300 rounded-lg transition"
-                    title="Jump to frequency and listen"
+                    title={t.listenTooltip}
                   >
                     <Volume2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => onRemoveFix(fix.id)}
                     className="p-1.5 hover:bg-slate-700 text-slate-500 hover:text-rose-400 rounded-lg transition"
-                    title="Delete this fix"
+                    title={t.deleteTooltip}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
