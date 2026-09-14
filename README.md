@@ -1,5 +1,7 @@
 # 🎧 Headphone & Speaker EQ Fixer (PEQ Tone Lab)
 
+[English](README.md) | [简体中文](README_zh.md)
+
 > A simple, beginner-friendly tone generator and parametric EQ assistant designed to detect and fix harsh peaks or quiet recesses in headphones, earphones, and speakers.
 
 ---
