@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Play,
   Square,
@@ -10,9 +10,12 @@ import {
   CheckCircle2,
   HelpCircle,
   Languages as LanguagesIcon,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import { GitHubIcon } from './GitHubIcon';
 import { useLanguage } from '../context/LanguageContext';
+import { Language } from '../utils/i18n';
 
 interface SimpleHeaderProps {
   isAudioRunning: boolean;
@@ -26,6 +29,11 @@ interface SimpleHeaderProps {
   onOpenHelp: () => void;
 }
 
+const LANGUAGE_OPTIONS: { code: Language; label: string; subLabel: string }[] = [
+  { code: 'en', label: 'English', subLabel: 'English' },
+  { code: 'zh', label: '简体中文', subLabel: 'Simplified Chinese' },
+];
+
 export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
   isAudioRunning,
   onToggleAudio,
@@ -37,7 +45,23 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
   onOpenExport,
   onOpenHelp,
 }) => {
-  const { t, lang, toggleLang } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setIsLangMenuOpen(false);
+      }
+    };
+    if (isLangMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLangMenuOpen]);
 
   return (
     <header className="bg-studio-surface border-b border-studio-border px-4 lg:px-6 py-3 text-slate-100 shadow-md">
@@ -122,17 +146,63 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Language Toggle, A/B Compare Toggle & Export Button */}
+        {/* Right: Language Dropdown, A/B Compare Toggle & Export Button */}
         <div className="flex items-center space-x-2">
-          {/* Language Switch Button */}
-          <button
-            onClick={toggleLang}
-            className="flex items-center space-x-1 px-2.5 py-2 rounded-xl bg-studio-panel hover:bg-slate-700 text-slate-300 hover:text-white border border-studio-border text-xs font-medium transition active:scale-95"
-            title={lang === 'en' ? '切换为中文界面' : 'Switch to English'}
-          >
-            <LanguagesIcon className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="font-mono font-bold">{lang === 'en' ? '中文' : 'EN'}</span>
-          </button>
+          {/* Language Menu Dropdown */}
+          <div className="relative" ref={langMenuRef}>
+            <button
+              onClick={() => setIsLangMenuOpen((prev) => !prev)}
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
+                isLangMenuOpen
+                  ? 'bg-studio-panel border-cyan-400 text-white shadow-md ring-1 ring-cyan-400/40'
+                  : 'bg-studio-panel hover:bg-slate-700 text-slate-300 hover:text-white border-studio-border'
+              }`}
+              aria-expanded={isLangMenuOpen}
+              aria-haspopup="true"
+              title={lang === 'en' ? 'Select language' : '选择语言'}
+            >
+              <LanguagesIcon className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="font-semibold">{lang === 'zh' ? '简体中文' : 'English'}</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                  isLangMenuOpen ? 'rotate-180 text-cyan-300' : ''
+                }`}
+              />
+            </button>
+
+            {isLangMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-44 rounded-xl bg-studio-panel border border-studio-border shadow-2xl py-1.5 z-50 backdrop-blur-md">
+                <div className="px-3 py-1 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-studio-border/60 mb-1">
+                  {lang === 'zh' ? '选择界面语言' : 'Select Language'}
+                </div>
+                {LANGUAGE_OPTIONS.map((opt) => {
+                  const isSelected = lang === opt.code;
+                  return (
+                    <button
+                      key={opt.code}
+                      onClick={() => {
+                        setLang(opt.code);
+                        setIsLangMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left transition ${
+                        isSelected
+                          ? 'bg-cyan-500/15 text-cyan-300 font-bold'
+                          : 'text-slate-300 hover:bg-studio-surface hover:text-white'
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <span>{opt.label}</span>
+                        <span className="text-[10px] text-slate-400 font-normal">
+                          {opt.subLabel}
+                        </span>
+                      </div>
+                      {isSelected && <Check className="w-4 h-4 text-cyan-400 flex-shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* A/B Compare Switch */}
           <button
