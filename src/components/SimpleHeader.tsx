@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   HelpCircle,
 } from 'lucide-react';
+import { GitHubIcon } from './GitHubIcon';
 
 interface SimpleHeaderProps {
   isAudioRunning: boolean;
@@ -146,6 +147,18 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
               </span>
             )}
           </button>
+
+          {/* GitHub Repository Link */}
+          <a
+            href="https://github.com/Silentishy/peq-tone-generator"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-studio-panel hover:bg-slate-700 text-slate-300 hover:text-white border border-studio-border text-xs font-semibold transition active:scale-95"
+            title="View source code & documentation on GitHub"
+          >
+            <GitHubIcon className="w-4 h-4 text-slate-300" />
+            <span className="hidden sm:inline">GitHub</span>
+          </a>
         </div>
       </div>
     </header>

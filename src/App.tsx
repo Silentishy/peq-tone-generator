@@ -6,6 +6,7 @@ import { SimpleEQVisualizer } from './components/SimpleEQVisualizer';
 import { MyFixesList } from './components/MyFixesList';
 import { ExportModal } from './components/ExportModal';
 import { HelpModal } from './components/HelpModal';
+import { GitHubIcon } from './components/GitHubIcon';
 import { AudioEngine } from './audio/AudioEngine';
 import { EQFix } from './types/audio';
 
@@ -202,8 +203,19 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-studio-border/60 py-3 px-6 bg-studio-surface/50 text-center text-xs text-slate-500 font-mono">
-        Headphone & Speaker EQ Fixer • Equalizer APO, Wavelet, & Poweramp Ready
+      <footer className="border-t border-studio-border/60 py-3 px-6 bg-studio-surface/50 text-xs text-slate-500 font-mono">
+        <div className="max-w-[1600px] mx-auto w-full flex flex-wrap justify-between items-center gap-2">
+          <span>Headphone & Speaker EQ Fixer • Equalizer APO, Wavelet, & Poweramp Ready</span>
+          <a
+            href="https://github.com/Silentishy/peq-tone-generator"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-1.5 text-slate-400 hover:text-cyan-300 transition"
+          >
+            <GitHubIcon className="w-3.5 h-3.5" />
+            <span>GitHub Repository</span>
+          </a>
+        </div>
       </footer>
 
       {/* Modals */}
