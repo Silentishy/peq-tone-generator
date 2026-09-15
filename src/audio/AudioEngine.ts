@@ -493,7 +493,7 @@ export class AudioEngine {
       node.channelCount = 2;
       node.channelCountMode = 'explicit';
       node.channelInterpretation = 'speakers';
-      node.type = 'peaking';
+      node.type = fix.filterType || 'peaking';
       node.frequency.setValueAtTime(fix.frequency, this.ctx.currentTime);
       node.gain.setValueAtTime(fix.gain, this.ctx.currentTime);
       node.Q.setValueAtTime(fix.q, this.ctx.currentTime);
@@ -514,6 +514,7 @@ export class AudioEngine {
     }
 
     const now = this.ctx.currentTime;
+    node.type = fix.filterType || 'peaking';
     node.frequency.setTargetAtTime(fix.frequency, now, 0.015);
     node.gain.setTargetAtTime(fix.gain, now, 0.015);
     node.Q.setTargetAtTime(fix.q, now, 0.015);
@@ -538,7 +539,7 @@ export class AudioEngine {
     const tempPhase = new Float32Array(freqPoints.length);
 
     for (const fix of activeFixes) {
-      tempFilter.type = 'peaking';
+      tempFilter.type = fix.filterType || 'peaking';
       tempFilter.frequency.setValueAtTime(fix.frequency, this.ctx.currentTime);
       tempFilter.gain.setValueAtTime(fix.gain, this.ctx.currentTime);
       tempFilter.Q.setValueAtTime(fix.q, this.ctx.currentTime);

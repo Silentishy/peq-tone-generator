@@ -59,7 +59,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     preamp?: number;
     preview: { freq: number; gain: number }[];
   } | null>(null);
-  const [showRawSnippet, setShowRawSnippet] = useState<boolean>(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<boolean>(false);
 
@@ -388,21 +387,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 </div>
               )}
 
-              {/* Toggle Manual Raw Text Snippet */}
-              <button
-                type="button"
-                onClick={() => setShowRawSnippet((prev) => !prev)}
-                className="text-xs text-slate-400 hover:text-cyan-300 flex items-center justify-between p-1 select-none"
-              >
-                <span>{t.importOrPasteSnippet}</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform ${
-                    showRawSnippet ? 'rotate-180 text-cyan-300' : ''
-                  }`}
-                />
-              </button>
-
-              {showRawSnippet && (
+              {/* Always-visible Manual Raw Text Snippet Area */}
+              <div className="flex flex-col gap-1.5 pt-1 border-t border-studio-border/60">
+                <span className="text-xs font-semibold text-slate-300">
+                  {t.importOrPasteSnippet}
+                </span>
                 <textarea
                   value={importText}
                   onChange={(e) => processFileContent(e.target.value)}
@@ -410,7 +399,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   rows={6}
                   className="w-full bg-studio-surface border border-studio-border rounded-xl p-3 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-400 scrollbar-thin leading-relaxed"
                 />
-              )}
+              </div>
 
               {importError && (
                 <div className="flex items-center space-x-2 text-xs text-rose-400 font-mono bg-rose-950/30 border border-rose-500/30 p-2.5 rounded-xl">

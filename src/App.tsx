@@ -430,6 +430,7 @@ export const App: React.FC = () => {
                 onSaveFix={handleSaveFix}
                 onUpdateFix={handleUpdateFix}
                 onRemoveFix={handleRemoveFix}
+                onSelectFrequency={handleChangeFrequency}
                 isAudioRunning={isAudioRunning}
                 onStartAudio={handleToggleAudio}
               />

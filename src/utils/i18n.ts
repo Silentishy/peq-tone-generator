@@ -62,6 +62,12 @@ export interface Translations {
   widthNormalDesc: string;
   widthWideTitle: string;
   widthWideDesc: string;
+  filterShapeLabel: string;
+  shapeBell: string;
+  shapeShelf: string;
+  addHarmanShelfBtn: string;
+  bassShelfBadge: string;
+  bassShelfDesc: string;
   liveFeedback: string;
   deleteFix: string;
 
@@ -242,6 +248,12 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     widthNormalDesc: 'Standard balance for most peaks & dips',
     widthWideTitle: 'Wide (Q: 0.71)',
     widthWideDesc: 'Gentle warmth, brightness, or broad dip',
+    filterShapeLabel: 'Filter Shape:',
+    shapeBell: '🎯 Bell / Peak',
+    shapeShelf: '🌊 Bass Shelf (Low Shelf)',
+    addHarmanShelfBtn: '+ Harman Bass Shelf (+4.5 dB @ 105 Hz)',
+    bassShelfBadge: 'Bass Shelf',
+    bassShelfDesc: 'Low Shelf filter boosts or cuts all sub-bass below this frequency',
     liveFeedback: 'Live sound updated! Listen through your headphones.',
     deleteFix: 'Delete Fix',
 
@@ -421,6 +433,12 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     widthNormalDesc: '适用于大多数常见耳机的峰谷调节',
     widthWideTitle: '宽频 (Q: 0.71)',
     widthWideDesc: '大范围整体提亮、增温或平缓微调',
+    filterShapeLabel: '滤波器形状 (类型)：',
+    shapeBell: '🎯 峰值滤波 (Bell / Peak)',
+    shapeShelf: '🌊 低音搁架滤波 (Bass Shelf)',
+    addHarmanShelfBtn: '+ 添加哈曼低音搁架 (+4.5 dB @ 105 Hz)',
+    bassShelfBadge: '低音搁架',
+    bassShelfDesc: '低音搁架滤波：提升或削减该截止频率以下的所有超低频',
     liveFeedback: '声音已实时更新！戴上耳机立即感受变化。',
     deleteFix: '删除此项修正',
 

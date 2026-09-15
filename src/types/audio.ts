@@ -1,12 +1,14 @@
 export type FilterWidth = 'narrow' | 'normal' | 'wide';
+export type FilterType = 'peaking' | 'lowshelf';
 
 export interface EQFix {
   id: string;
-  frequency: number;   // In Hz (e.g. 6200)
-  gain: number;        // In dB (e.g. -4.5 or +3.0)
+  frequency: number;   // In Hz (e.g. 6200 or 105)
+  gain: number;        // In dB (e.g. -4.5 or +4.0)
   width: FilterWidth;  // 'narrow' (Q=4.5), 'normal' (Q=1.41), 'wide' (Q=0.71)
   q: number;
-  label?: string;      // Friendly description like "Harsh Treble Peak"
+  filterType?: FilterType; // 'peaking' (default) or 'lowshelf'
+  label?: string;      // Friendly description like "Harsh Treble Peak" or "Bass Shelf"
   enabled: boolean;
 }
 

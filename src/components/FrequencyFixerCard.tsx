@@ -1,14 +1,14 @@
 import React from 'react';
 import {
-  VolumeX,
   TrendingDown,
   TrendingUp,
   CheckCircle2,
   Trash2,
   Sliders,
   Sparkles,
+  Waves,
 } from 'lucide-react';
-import { EQFix, FilterWidth } from '../types/audio';
+import { EQFix, FilterType, FilterWidth } from '../types/audio';
 import { WIDTH_MAP, MIN_GAIN, MAX_GAIN } from '../utils/eqMath';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -18,6 +18,7 @@ interface FrequencyFixerCardProps {
   onSaveFix: (fix: Omit<EQFix, 'id'>) => void;
   onUpdateFix: (fix: EQFix) => void;
   onRemoveFix: (id: string) => void;
+  onSelectFrequency?: (freq: number) => void;
   isAudioRunning: boolean;
   onStartAudio: () => void;
 }
@@ -28,26 +29,30 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
   onSaveFix,
   onUpdateFix,
   onRemoveFix,
+  onSelectFrequency,
   isAudioRunning,
   onStartAudio,
 }) => {
-  const { t } = useLanguage();
-  // Check if there is an existing fix close to this frequency (within 3% tolerance)
+  const { t, lang } = useLanguage();
+  // Check if there is an existing fix close to this frequency (within 3.5% tolerance)
   const existingFix = fixes.find(
     (f) => Math.abs(f.frequency - currentFreq) / currentFreq < 0.035
   );
 
   const [gain, setGain] = React.useState<number>(existingFix ? existingFix.gain : -3.0);
   const [width, setWidth] = React.useState<FilterWidth>(existingFix ? existingFix.width : 'normal');
+  const [filterType, setFilterType] = React.useState<FilterType>(existingFix?.filterType || 'peaking');
 
   // Synchronize state when moving to a frequency that already has a fix
   React.useEffect(() => {
     if (existingFix) {
       setGain(existingFix.gain);
       setWidth(existingFix.width);
+      setFilterType(existingFix.filterType || 'peaking');
     } else {
       setGain(-3.0);
       setWidth('normal');
+      setFilterType('peaking');
     }
   }, [existingFix, currentFreq]);
 
@@ -60,6 +65,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
         gain: newGain,
         width,
         q: WIDTH_MAP[width].q,
+        filterType,
       });
     }
   };
@@ -71,17 +77,34 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
         ...existingFix,
         width: newWidth,
         q: WIDTH_MAP[newWidth].q,
+        filterType,
       });
     }
   };
 
-  const handleApplyFix = (suggestedGain: number, suggestedWidth: FilterWidth = 'normal') => {
+  const handleShapeChange = (newShape: FilterType) => {
+    setFilterType(newShape);
+    if (existingFix) {
+      onUpdateFix({
+        ...existingFix,
+        filterType: newShape,
+        q: newShape === 'lowshelf' ? 0.71 : WIDTH_MAP[width].q,
+      });
+    }
+  };
+
+  const handleApplyFix = (
+    suggestedGain: number,
+    suggestedWidth: FilterWidth = 'normal',
+    suggestedType: FilterType = 'peaking'
+  ) => {
     if (!isAudioRunning) {
       onStartAudio();
     }
 
     setGain(suggestedGain);
     setWidth(suggestedWidth);
+    setFilterType(suggestedType);
 
     if (existingFix) {
       onUpdateFix({
@@ -89,14 +112,50 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
         frequency: currentFreq,
         gain: suggestedGain,
         width: suggestedWidth,
-        q: WIDTH_MAP[suggestedWidth].q,
+        q: suggestedType === 'lowshelf' ? 0.71 : WIDTH_MAP[suggestedWidth].q,
+        filterType: suggestedType,
       });
     } else {
       onSaveFix({
         frequency: currentFreq,
         gain: suggestedGain,
         width: suggestedWidth,
-        q: WIDTH_MAP[suggestedWidth].q,
+        q: suggestedType === 'lowshelf' ? 0.71 : WIDTH_MAP[suggestedWidth].q,
+        filterType: suggestedType,
+        enabled: true,
+      });
+    }
+  };
+
+  const handleAddHarmanShelf = () => {
+    if (!isAudioRunning) {
+      onStartAudio();
+    }
+    if (onSelectFrequency) {
+      onSelectFrequency(105);
+    }
+
+    const harmanFreq = 105;
+    const existingHarman = fixes.find(
+      (f) => Math.abs(f.frequency - harmanFreq) / harmanFreq < 0.05 && f.filterType === 'lowshelf'
+    );
+
+    if (existingHarman) {
+      onUpdateFix({
+        ...existingHarman,
+        gain: 4.5,
+        filterType: 'lowshelf',
+        q: 0.71,
+        width: 'wide',
+      });
+    } else {
+      onSaveFix({
+        frequency: 105,
+        gain: 4.5,
+        filterType: 'lowshelf',
+        q: 0.71,
+        width: 'wide',
+        label: 'Harman Bass Shelf',
         enabled: true,
       });
     }
@@ -111,7 +170,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
   return (
     <div id="step-2-fixer" className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
           <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center border border-cyan-500/40">
             2
@@ -123,9 +182,13 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
         </div>
 
         {existingFix ? (
-          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-1">
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1 border ${
+            existingFix.filterType === 'lowshelf'
+              ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
+              : 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+          }`}>
             <CheckCircle2 className="w-3.5 h-3.5" />
-            {t.fixActive}: {existingFix.gain >= 0 ? `+${existingFix.gain}` : existingFix.gain} dB
+            {existingFix.filterType === 'lowshelf' ? t.bassShelfBadge : t.fixActive}: {existingFix.gain >= 0 ? `+${existingFix.gain}` : existingFix.gain} dB
           </span>
         ) : (
           <span className="text-xs text-slate-400">
@@ -134,11 +197,52 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
         )}
       </div>
 
+      {/* Filter Shape & Preset Row */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-studio-surface/80 p-2.5 rounded-xl border border-studio-border/70">
+        <div className="flex items-center space-x-2">
+          <span className="text-xs font-semibold text-slate-300">
+            {t.filterShapeLabel}
+          </span>
+          <div className="flex bg-studio-panel rounded-lg border border-studio-border p-0.5 text-xs font-mono">
+            <button
+              onClick={() => handleShapeChange('peaking')}
+              className={`px-2.5 py-1 rounded-md transition ${
+                filterType === 'peaking'
+                  ? 'bg-cyan-500/20 text-cyan-300 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {t.shapeBell}
+            </button>
+            <button
+              onClick={() => handleShapeChange('lowshelf')}
+              className={`px-2.5 py-1 rounded-md transition ${
+                filterType === 'lowshelf'
+                  ? 'bg-amber-500/20 text-amber-300 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {t.shapeShelf}
+            </button>
+          </div>
+        </div>
+
+        {/* 1-Click Harman Bass Shelf Quick Button */}
+        <button
+          onClick={handleAddHarmanShelf}
+          className="py-1 px-2.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold transition flex items-center justify-center space-x-1 active:scale-95 shadow-sm"
+          title="Add reference Harman Target bass shelf curve at 105 Hz"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <span>{t.addHarmanShelfBtn}</span>
+        </button>
+      </div>
+
       {/* Main Choice: Too Loud vs Too Quiet vs Balanced */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {/* Too Loud (Peak Cut) */}
         <button
-          onClick={() => handleApplyFix(-3.5, 'narrow')}
+          onClick={() => handleApplyFix(-3.5, 'narrow', filterType)}
           className={`flex items-center justify-center space-x-2 p-3 rounded-xl border text-xs font-bold transition shadow active:scale-95 ${
             existingFix && existingFix.gain < 0
               ? 'bg-rose-500/20 border-rose-500 text-rose-200 ring-2 ring-rose-500/40'
@@ -151,7 +255,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
 
         {/* Too Quiet (Dip Boost) */}
         <button
-          onClick={() => handleApplyFix(3.0, 'normal')}
+          onClick={() => handleApplyFix(3.0, 'normal', filterType)}
           className={`flex items-center justify-center space-x-2 p-3 rounded-xl border text-xs font-bold transition shadow active:scale-95 ${
             existingFix && existingFix.gain > 0
               ? 'bg-sky-500/20 border-sky-500 text-sky-200 ring-2 ring-sky-500/40'
@@ -182,6 +286,13 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
       {/* Adjuster Drawer (Active when fix exists or being created) */}
       {existingFix && (
         <div className="bg-studio-surface border border-studio-border/80 rounded-2xl p-4 flex flex-col gap-4">
+          {filterType === 'lowshelf' && (
+            <div className="flex items-center space-x-2 bg-amber-950/20 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-300/90 leading-tight">
+              <Waves className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <span>{t.bassShelfDesc}</span>
+            </div>
+          )}
+
           {/* Live Gain Slider */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
@@ -255,33 +366,35 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
             </div>
           </div>
 
-          {/* Width / Sharpness Options */}
-          <div>
-            <span className="text-xs font-semibold text-slate-300 block mb-2">
-              {t.widthLabel}
-            </span>
-            <div className="grid grid-cols-3 gap-2">
-              {widthOptions.map((opt) => {
-                const isSelected = width === opt.key;
-                return (
-                  <button
-                    key={opt.key}
-                    onClick={() => handleWidthChange(opt.key)}
-                    className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
-                      isSelected
-                        ? 'bg-cyan-500/15 border-cyan-400 text-cyan-200'
-                        : 'bg-studio-panel border-studio-border text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <span className="text-xs font-bold block">{opt.title}</span>
-                    <span className="text-[11px] text-slate-400 mt-1 leading-tight block">
-                      {opt.desc}
-                    </span>
-                  </button>
-                );
-              })}
+          {/* Width / Sharpness Options (only for bell/peaking filters) */}
+          {filterType === 'peaking' && (
+            <div>
+              <span className="text-xs font-semibold text-slate-300 block mb-2">
+                {t.widthLabel}
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                {widthOptions.map((opt) => {
+                  const isSelected = width === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => handleWidthChange(opt.key)}
+                      className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
+                        isSelected
+                          ? 'bg-cyan-500/15 border-cyan-400 text-cyan-200'
+                          : 'bg-studio-panel border-studio-border text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span className="text-xs font-bold block">{opt.title}</span>
+                      <span className="text-[11px] text-slate-400 mt-1 leading-tight block">
+                        {opt.desc}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Bottom Feedback */}
           <div className="flex items-center justify-between pt-2 border-t border-studio-border/60">

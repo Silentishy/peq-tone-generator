@@ -302,15 +302,16 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
             <span>{isBypassed ? t.bypassOn : t.bypassOff}</span>
           </button>
 
-          {/* Export / Import Button */}
+          {/* Export / Import Button - Prominently Noticeable */}
           <button
             onClick={onOpenExport}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-cyan-950/40 transition active:scale-95"
+            className="flex items-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-4 py-2 bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 hover:from-emerald-300 hover:to-sky-300 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-cyan-500/25 ring-2 ring-cyan-300/60 hover:scale-105 active:scale-95 transition-all"
+            title={t.exportFixes}
           >
-            <Share2 className="w-3.5 h-3.5" />
-            <span className="hidden xs:inline">{t.exportFixes}</span>
+            <Share2 className="w-4 h-4 flex-shrink-0" />
+            <span className="tracking-wide">{t.exportFixes}</span>
             {fixesCount > 0 && (
-              <span className="ml-0.5 sm:ml-1 px-1.5 py-0.2 bg-slate-950 text-cyan-300 rounded-full text-[10px] font-mono">
+              <span className="ml-1 px-1.5 py-0.5 bg-slate-950 text-cyan-300 font-black rounded-full text-[10px] font-mono shadow-inner">
                 {fixesCount}
               </span>
             )}

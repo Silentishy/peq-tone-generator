@@ -291,9 +291,10 @@ export function exportToEqualizerAPO(fixes: EQFix[], preamp = 0): string {
   ];
 
   fixes.forEach((fix, index) => {
+    const apoType = fix.filterType === 'lowshelf' ? 'LSC' : 'PK';
     const gainStr = fix.gain >= 0 ? `+${fix.gain.toFixed(1)}` : fix.gain.toFixed(1);
     lines.push(
-      `Filter ${index + 1}: ON PK Fc ${Math.round(fix.frequency)} Hz Gain ${gainStr} dB Q ${fix.q.toFixed(2)}`
+      `Filter ${index + 1}: ON ${apoType} Fc ${Math.round(fix.frequency)} Hz Gain ${gainStr} dB Q ${fix.q.toFixed(2)}`
     );
   });
 
@@ -309,8 +310,9 @@ export function exportToWavelet(fixes: EQFix[], preamp = 0): string {
   ];
 
   fixes.forEach((fix) => {
+    const wavType = fix.filterType === 'lowshelf' ? 'LS' : 'PK';
     const gainStr = fix.gain >= 0 ? `+${fix.gain.toFixed(1)}` : fix.gain.toFixed(1);
-    lines.push(`Filter: PK Fc ${Math.round(fix.frequency)} Gain ${gainStr} Q ${fix.q.toFixed(2)}`);
+    lines.push(`Filter: ${wavType} Fc ${Math.round(fix.frequency)} Gain ${gainStr} Q ${fix.q.toFixed(2)}`);
   });
 
   return lines.join('\n');
@@ -320,14 +322,15 @@ export function exportToTable(fixes: EQFix[], preamp = 0): string {
   if (fixes.length === 0) return 'No fixes created yet.';
 
   let out = `Preamp Offset: ${preamp >= 0 ? '+' : ''}${preamp.toFixed(1)} dB\n\n`;
-  out += 'Frequency (Hz) | Gain (dB) | Q Factor | Width\n';
-  out += '---------------|-----------|----------|--------\n';
+  out += 'Frequency (Hz) | Gain (dB) | Q Factor | Shape      | Width\n';
+  out += '---------------|-----------|----------|------------|--------\n';
   fixes.forEach((fix) => {
     const fStr = `${Math.round(fix.frequency)} Hz`.padEnd(14, ' ');
     const gStr = `${fix.gain >= 0 ? '+' : ''}${fix.gain.toFixed(1)} dB`.padEnd(9, ' ');
     const qStr = `${fix.q.toFixed(2)}`.padEnd(8, ' ');
+    const shapeStr = (fix.filterType === 'lowshelf' ? 'Low Shelf' : 'Peaking').padEnd(10, ' ');
     const wStr = fix.width.padEnd(6, ' ');
-    out += `${fStr} | ${gStr} | ${qStr} | ${wStr}\n`;
+    out += `${fStr} | ${gStr} | ${qStr} | ${shapeStr} | ${wStr}\n`;
   });
 
   return out;
@@ -368,13 +371,17 @@ export function importFromEqualizerAPO(text: string): { fixes: Partial<EQFix>[];
     if (line.startsWith('#')) continue;
 
     // e.g. "Filter 1: ON PK Fc 6200 Hz Gain -4.0 dB Q 4.5"
+    // or "Filter 1: ON LSC Fc 105 Hz Gain 4.5 dB Q 0.71"
     // or "Filter: PK Fc 6200 Gain -4.0 Q 4.5"
     const apoMatch = line.match(/(?:Filter\s*\d*:?\s*)?(ON|OFF)?\s*([A-Za-z]+)\s+Fc\s+([\d.]+)\s*(?:Hz)?\s+Gain\s+([+-]?[\d.]+)\s*(?:dB)?\s+Q\s+([\d.]+)/i);
     if (apoMatch) {
       const enabled = apoMatch[1] ? apoMatch[1].toUpperCase() === 'ON' : true;
+      const typeKey = apoMatch[2].toUpperCase();
       const freq = parseFloat(apoMatch[3]);
       const gain = parseFloat(apoMatch[4]);
       const q = parseFloat(apoMatch[5]);
+
+      const filterType = (typeKey === 'LSC' || typeKey === 'LS' || typeKey === 'LOWSHELF') ? 'lowshelf' : 'peaking';
 
       let width: FilterWidth = 'normal';
       if (q >= 3.0) width = 'narrow';
@@ -386,6 +393,7 @@ export function importFromEqualizerAPO(text: string): { fixes: Partial<EQFix>[];
           gain: Math.max(MIN_GAIN, Math.min(MAX_GAIN, Math.round(gain * 10) / 10)),
           q: !isNaN(q) ? Math.max(0.1, Math.min(20, q)) : WIDTH_MAP[width].q,
           width,
+          filterType,
           enabled,
         });
       }

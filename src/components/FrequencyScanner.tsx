@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Play,
   Pause,
@@ -11,7 +11,6 @@ import {
   Waves,
   Sparkles,
   Info,
-  ChevronDown,
 } from 'lucide-react';
 import {
   getFrequencyZone,
@@ -36,7 +35,7 @@ interface FrequencyScannerProps {
   onToggleEqualLoudness: () => void;
 }
 
-type CategoryFilter = 'all' | 'bass' | 'mids' | 'treble' | 'air';
+type CategorySection = 'bass' | 'mids' | 'treble' | 'air';
 
 export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
   frequency,
@@ -52,8 +51,8 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
 }) => {
   const { t, lang } = useLanguage();
   const currentZone = getFrequencyZone(frequency);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('all');
-  const [isLandmarksExpanded, setIsLandmarksExpanded] = useState<boolean>(false);
+  const landmarksContainerRef = useRef<HTMLDivElement>(null);
+  const [activeCategory, setActiveCategory] = useState<CategorySection>('mids');
 
   // Convert logarithmic frequency to 0-1000 slider scale
   const logMin = Math.log10(MIN_FREQ);
@@ -72,17 +71,18 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
     onChangeFrequency(next);
   };
 
-  const filteredLandmarks =
-    selectedCategory === 'all'
-      ? FREQUENCY_LANDMARKS
-      : FREQUENCY_LANDMARKS.filter((lm) => lm.category === selectedCategory);
+  const scrollToCategory = (cat: CategorySection) => {
+    setActiveCategory(cat);
+    const container = landmarksContainerRef.current;
+    if (!container) return;
+    const targetCard = container.querySelector(`[data-category="${cat}"]`) as HTMLElement | null;
+    if (targetCard) {
+      const top = targetCard.offsetTop - container.offsetTop;
+      container.scrollTo({ top: Math.max(0, top - 2), behavior: 'smooth' });
+    }
+  };
 
-  const displayedLandmarks = isLandmarksExpanded
-    ? filteredLandmarks
-    : filteredLandmarks.slice(0, 12);
-
-  const categories: { key: CategoryFilter; label: string; count: number }[] = [
-    { key: 'all', label: t.catAll, count: FREQUENCY_LANDMARKS.length },
+  const categories: { key: CategorySection; label: string; count: number }[] = [
     {
       key: 'bass',
       label: t.catBass,
@@ -323,7 +323,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
         </div>
       </div>
 
-      {/* Quick Jump Frequency Landmarks: Compact & Collapsible */}
+      {/* Quick Jump Frequency Landmarks: Exactly 3 Rows & Smooth Section Scrolling */}
       <div className="flex flex-col gap-2 pt-2 border-t border-studio-border/50">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center space-x-2">
@@ -335,14 +335,14 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
             </span>
           </div>
 
-          {/* Category Filter Tabs */}
+          {/* Category Section Scroll Buttons (Bass, Mids, Treble, Air - No All button) */}
           <div className="flex items-center bg-studio-surface rounded-lg border border-studio-border p-0.5 text-xs font-mono">
             {categories.map((cat) => (
               <button
                 key={cat.key}
-                onClick={() => setSelectedCategory(cat.key)}
-                className={`px-2 py-0.5 rounded-md text-[11px] transition ${
-                  selectedCategory === cat.key
+                onClick={() => scrollToCategory(cat.key)}
+                className={`px-2.5 py-0.5 rounded-md text-[11px] transition active:scale-95 ${
+                  activeCategory === cat.key
                     ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
@@ -353,9 +353,12 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
           </div>
         </div>
 
-        {/* Card Grid */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 xl:grid-cols-6 gap-1.5 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
-          {displayedLandmarks.map((lm) => {
+        {/* 3-Row Scrollable Card Grid */}
+        <div
+          ref={landmarksContainerRef}
+          className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 xl:grid-cols-6 gap-1.5 h-[148px] overflow-y-auto pr-1 scrollbar-thin scroll-smooth"
+        >
+          {FREQUENCY_LANDMARKS.map((lm) => {
             const isCurrent = Math.abs(frequency - lm.exactFreq) / lm.exactFreq < 0.025;
             const freqStr = formatFreq(lm.exactFreq);
             const lmName = lang === 'zh' && lm.nameZh ? lm.nameZh : lm.name;
@@ -364,6 +367,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
             return (
               <button
                 key={lm.exactFreq}
+                data-category={lm.category}
                 onClick={() => onChangeFrequency(lm.exactFreq)}
                 className={`px-2 py-1.5 rounded-lg border text-left transition-all flex flex-col justify-between active:scale-95 ${
                   isCurrent
@@ -395,22 +399,6 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
             );
           })}
         </div>
-
-        {/* Expand / Collapse All 54 Landmarks Button */}
-        {filteredLandmarks.length > 12 && (
-          <button
-            type="button"
-            onClick={() => setIsLandmarksExpanded((prev) => !prev)}
-            className="w-full py-1 text-center text-[11px] font-mono text-slate-400 hover:text-cyan-300 border border-dashed border-studio-border/80 hover:border-cyan-500/40 rounded-lg transition flex items-center justify-center gap-1 mt-0.5"
-          >
-            <span>{isLandmarksExpanded ? t.toggleLandmarksHide : `${t.toggleLandmarksShow} (${filteredLandmarks.length})`}</span>
-            <ChevronDown
-              className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                isLandmarksExpanded ? 'rotate-180 text-cyan-400' : ''
-              }`}
-            />
-          </button>
-        )}
       </div>
     </div>
   );

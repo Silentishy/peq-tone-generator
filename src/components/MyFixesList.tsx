@@ -60,6 +60,7 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 sm:max-h-72 lg:max-h-80 overflow-y-auto pr-1 scrollbar-thin">
           {fixes.map((fix) => {
             const isCut = fix.gain < 0;
+            const isShelf = fix.filterType === 'lowshelf';
             return (
               <div
                 key={fix.id}
@@ -69,7 +70,11 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
                   <div className="flex items-center space-x-2">
                     <span
                       className={`w-2.5 h-2.5 rounded-full ${
-                        isCut ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-sky-400 shadow-sm shadow-sky-400/50'
+                        isShelf
+                          ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
+                          : isCut
+                          ? 'bg-rose-500 shadow-sm shadow-rose-500/50'
+                          : 'bg-sky-400 shadow-sm shadow-sky-400/50'
                       }`}
                     />
                     <span className="font-mono text-sm font-bold text-slate-200">
@@ -77,7 +82,7 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
                     </span>
                     <span
                       className={`font-mono text-xs font-bold ${
-                        isCut ? 'text-rose-400' : 'text-sky-400'
+                        isShelf ? 'text-amber-400' : isCut ? 'text-rose-400' : 'text-sky-400'
                       }`}
                     >
                       {fix.gain >= 0 ? `+${fix.gain.toFixed(1)}` : fix.gain.toFixed(1)} dB
@@ -85,7 +90,9 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
                   </div>
 
                   <span className="text-[11px] text-slate-400 mt-0.5">
-                    {isCut ? t.peakCut : t.dipBoost} • {getWidthLabel(fix.width)} (Q: {fix.q.toFixed(2)})
+                    {isShelf
+                      ? `${t.bassShelfBadge} • Q: ${fix.q.toFixed(2)}`
+                      : `${isCut ? t.peakCut : t.dipBoost} • ${getWidthLabel(fix.width)} (Q: ${fix.q.toFixed(2)})`}
                   </span>
                 </div>
 
