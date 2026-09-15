@@ -109,7 +109,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
   ];
 
   return (
-    <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col gap-4">
+    <div id="step-2-fixer" className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">

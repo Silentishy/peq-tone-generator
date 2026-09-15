@@ -113,6 +113,17 @@ export interface Translations {
   deleteProfile: string;
   promptProfileName: string;
 
+  // Workflow Stepper & Responsive Guide
+  stepperTitle: string;
+  stepperStep1: string;
+  stepperStep2: string;
+  stepperStep3: string;
+  stepperStep4: string;
+  toggleLandmarksShow: string;
+  toggleLandmarksHide: string;
+  step4SectionTitle: string;
+  step5SectionTitle: string;
+
   // Export & Import Modal
   exportModalTitle: string;
   tabWindows: string;
@@ -132,10 +143,14 @@ export interface Translations {
   autoPreampLabel: string;
   importTitle: string;
   importDesc: string;
+  importDropzone: string;
+  importDropzoneFormats: string;
+  importOrPasteSnippet: string;
   importPlaceholder: string;
   importBtn: string;
   importSuccess: string;
   importError: string;
+  importFileSummary: string;
 
   // Keyboard Shortcuts Modal
   shortcutsTitle: string;
@@ -278,12 +293,23 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     deleteProfile: 'Delete Profile',
     promptProfileName: 'Enter a name for this EQ profile (e.g., Sennheiser HD600, AirPods Pro):',
 
+    // Workflow Stepper & Responsive Guide
+    stepperTitle: 'Guided 4-Step Tuning Workflow:',
+    stepperStep1: '1. Scan & Spot',
+    stepperStep2: '2. Level dB',
+    stepperStep3: '3. Audition Music',
+    stepperStep4: '4. Curve & Export',
+    toggleLandmarksShow: 'Show All 54 Landmark Frequencies',
+    toggleLandmarksHide: 'Collapse Landmark Frequencies',
+    step4SectionTitle: 'Step 4: Live EQ Response Curve',
+    step5SectionTitle: 'Step 5: Active Fixes Ledger',
+
     // Export & Import Modal
     exportModalTitle: 'Export & Import EQ Configuration',
     tabWindows: 'Windows (Peace / APO)',
     tabAndroid: 'Android (Wavelet)',
     tabUniversal: 'Mac & Hardware Table',
-    tabImport: 'Reverse Import',
+    tabImport: 'Direct File Import & Text',
     apoTitle: 'Equalizer APO & Peace GUI (Windows)',
     apoDesc: 'Open Peace GUI or Equalizer APO. Paste these lines into your config file or type them into the Peace parametric sliders.',
     waveletTitle: 'Wavelet & Poweramp (Android)',
@@ -295,12 +321,16 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     copiedSuccess: 'Copied to Clipboard!',
     preampSetting: 'Digital Headroom / Preamp:',
     autoPreampLabel: 'Auto Headroom Protection (Prevents Digital Clipping)',
-    importTitle: 'Import Existing EQ Configuration:',
-    importDesc: 'Paste Equalizer APO lines, Wavelet lines, or JSON format below to import into your current profile:',
+    importTitle: 'Import EQ Configuration File or Snippet:',
+    importDesc: 'Select an existing configuration file or drag & drop it below to instantly parse and apply:',
+    importDropzone: 'Click to choose file or drag & drop EQ config file here',
+    importDropzoneFormats: 'Supported: .txt (Equalizer APO / Peace / Wavelet / REW), .json, .csv, .req',
+    importOrPasteSnippet: 'Or paste text snippet directly:',
     importPlaceholder: 'e.g.\nPreamp: -3.5 dB\nFilter 1: ON PK Fc 120 Hz Gain 3.0 dB Q 1.41\nFilter 2: ON PK Fc 6200 Hz Gain -4.0 dB Q 4.5',
-    importBtn: 'Parse & Apply to Current Profile',
-    importSuccess: 'Successfully imported fixes into current profile!',
-    importError: 'Could not find valid filter lines. Please check format.',
+    importBtn: 'Apply to Current Profile',
+    importSuccess: 'Successfully parsed and applied EQ filters!',
+    importError: 'Could not find valid filter lines in file. Please check file format.',
+    importFileSummary: 'File Detected:',
 
     // Keyboard Shortcuts Modal
     shortcutsTitle: 'Keyboard Shortcuts Cheat Sheet',
@@ -442,12 +472,23 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     deleteProfile: '删除当前配置',
     promptProfileName: '请输入新设备配置名称 (例如：森海 HD600、AirPods Pro、桌面音箱)：',
 
+    // Workflow Stepper & Responsive Guide
+    stepperTitle: '新手 4 步调音向导：',
+    stepperStep1: '1. 扫频找峰',
+    stepperStep2: '2. 修正分贝',
+    stepperStep3: '3. 音乐试听',
+    stepperStep4: '4. 曲线与导出',
+    toggleLandmarksShow: '展开全部 54 个声学关键频点',
+    toggleLandmarksHide: '折叠声学关键频点 (精简视图)',
+    step4SectionTitle: '步骤 4：实时频响修正曲线',
+    step5SectionTitle: '步骤 5：已生效修正清单',
+
     // Export & Import Modal
     exportModalTitle: '导出与反向导入 EQ 调音配置',
     tabWindows: 'Windows (Peace / APO)',
     tabAndroid: 'Android (Wavelet / Poweramp)',
     tabUniversal: 'Mac / 硬件参数表格',
-    tabImport: '反向导入配置',
+    tabImport: '文件直传导入 / 粘贴',
     apoTitle: 'Equalizer APO & Peace GUI (Windows 平台)',
     apoDesc: '打开 Peace GUI 或 Equalizer APO，将下方配置复制粘贴到 config.txt 或导入到 Peace 参数均衡器中。',
     waveletTitle: 'Wavelet & Poweramp 均衡器 (安卓平台)',
@@ -459,12 +500,16 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     copiedSuccess: '已成功复制到剪贴板！',
     preampSetting: '数字动态余量 / 前级负增益 (Preamp)：',
     autoPreampLabel: '自动防削波动态余量保护 (当有频点提升时，自动设置负 Preamp 防止爆音破音)',
-    importTitle: '反向导入已有 EQ 配置文件：',
-    importDesc: '可直接粘贴 Equalizer APO 代码行、Wavelet 代码行或 JSON 格式，导入覆盖或追加到当前设备配置中：',
+    importTitle: '导入已有 EQ 配置文件或代码：',
+    importDesc: '可直接拖入已有 EQ 配置文件进行秒级解析，或直接粘贴代码行导入当前设备配置中：',
+    importDropzone: '点击选择文件，或直接拖拽 EQ 配置文件到此处',
+    importDropzoneFormats: '支持格式：.txt (Equalizer APO / Peace / Wavelet / REW), .json, .csv, .req',
+    importOrPasteSnippet: '或者直接在此处粘贴文本代码片段：',
     importPlaceholder: '例如：\nPreamp: -3.5 dB\nFilter 1: ON PK Fc 120 Hz Gain 3.0 dB Q 1.41\nFilter 2: ON PK Fc 6200 Hz Gain -4.0 dB Q 4.5',
     importBtn: '解析并应用到当前设备配置',
     importSuccess: '成功解析并导入 EQ 配置！',
-    importError: '未能在粘贴文本中找到有效的 Filter 参数行，请检查格式。',
+    importError: '未能在文件中找到有效的 Filter 参数行，请检查文件格式。',
+    importFileSummary: '已成功读取文件：',
 
     // Keyboard Shortcuts Modal
     shortcutsTitle: '调音键盘快捷键秘籍 (闭眼盲听必备)',

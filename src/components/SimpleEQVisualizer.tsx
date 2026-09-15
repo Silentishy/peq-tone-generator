@@ -432,14 +432,14 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   };
 
   return (
-    <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-3">
+    <div id="step-4-visualizer" className="bg-studio-panel border border-studio-border rounded-2xl p-3.5 sm:p-5 shadow-xl flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-1">
         <div className="flex items-center space-x-2">
           <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center border border-cyan-500/40">
-            3
+            4
           </span>
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-            {t.step3Title}
+            {t.step4SectionTitle}
           </h2>
         </div>
         <span className="text-[10px] font-mono text-cyan-400/90 hidden sm:inline">
@@ -449,7 +449,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
 
       <div
         ref={containerRef}
-        className="relative w-full h-52 sm:h-64 lg:h-72 rounded-xl overflow-hidden border border-studio-border bg-studio-surface shadow-inner select-none"
+        className="relative w-full h-44 sm:h-52 md:h-60 lg:h-64 xl:h-72 rounded-xl overflow-hidden border border-studio-border bg-studio-surface shadow-inner select-none"
       >
         <canvas
           ref={canvasRef}

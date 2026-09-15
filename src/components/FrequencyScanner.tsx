@@ -11,6 +11,7 @@ import {
   Waves,
   Sparkles,
   Info,
+  ChevronDown,
 } from 'lucide-react';
 import {
   getFrequencyZone,
@@ -52,6 +53,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
   const { t, lang } = useLanguage();
   const currentZone = getFrequencyZone(frequency);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('all');
+  const [isLandmarksExpanded, setIsLandmarksExpanded] = useState<boolean>(false);
 
   // Convert logarithmic frequency to 0-1000 slider scale
   const logMin = Math.log10(MIN_FREQ);
@@ -74,6 +76,10 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
     selectedCategory === 'all'
       ? FREQUENCY_LANDMARKS
       : FREQUENCY_LANDMARKS.filter((lm) => lm.category === selectedCategory);
+
+  const displayedLandmarks = isLandmarksExpanded
+    ? filteredLandmarks
+    : filteredLandmarks.slice(0, 12);
 
   const categories: { key: CategoryFilter; label: string; count: number }[] = [
     { key: 'all', label: t.catAll, count: FREQUENCY_LANDMARKS.length },
@@ -106,7 +112,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
   const isPinnaRegion = frequency >= 2500 && frequency <= 4500;
 
   return (
-    <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-4">
+    <div id="step-1-scanner" className="bg-studio-panel border border-studio-border rounded-2xl p-3.5 sm:p-5 shadow-xl flex flex-col gap-3.5 sm:gap-4">
       {/* Step Indicator & Controls Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
@@ -120,12 +126,12 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
         </div>
 
         {/* Generator Controls: Sine vs Narrowband Noise & Equal-Loudness Toggle */}
-        <div className="flex items-center flex-wrap gap-2">
+        <div className="flex items-center flex-wrap gap-1.5 sm:gap-2">
           {/* Tone Mode: Sine vs Noise */}
           <div className="flex bg-studio-surface rounded-xl border border-studio-border p-0.5 text-xs font-medium">
             <button
               onClick={() => onSelectToneMode('sine')}
-              className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
+              className={`px-2 sm:px-2.5 py-1 rounded-lg transition flex items-center gap-1 text-[11px] sm:text-xs ${
                 toneMode === 'sine'
                   ? 'bg-cyan-500/20 text-cyan-300 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -133,11 +139,11 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
               title={t.toneModeSineDesc}
             >
               <Waves className="w-3.5 h-3.5" />
-              <span>{t.toneModeSine}</span>
+              <span>{toneMode === 'sine' ? t.toneModeSine : 'Sine'}</span>
             </button>
             <button
               onClick={() => onSelectToneMode('narrow_noise')}
-              className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
+              className={`px-2 sm:px-2.5 py-1 rounded-lg transition flex items-center gap-1 text-[11px] sm:text-xs ${
                 toneMode === 'narrow_noise'
                   ? 'bg-cyan-500/20 text-cyan-300 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -145,14 +151,14 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
               title={t.toneModeNoiseDesc}
             >
               <Volume2 className="w-3.5 h-3.5" />
-              <span>{t.toneModeNoise}</span>
+              <span>{toneMode === 'narrow_noise' ? t.toneModeNoise : 'Noise'}</span>
             </button>
           </div>
 
           {/* Equal-Loudness (ISO 226) Normalization Toggle */}
           <button
             onClick={onToggleEqualLoudness}
-            className={`px-2.5 py-1 rounded-xl border text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 ${
+            className={`px-2 sm:px-2.5 py-1 rounded-xl border text-[11px] sm:text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 ${
               isEqualLoudness
                 ? 'bg-indigo-500/20 border-indigo-400 text-indigo-300 shadow-sm'
                 : 'bg-studio-surface border-studio-border text-slate-400 hover:text-slate-200'
@@ -166,13 +172,13 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
       </div>
 
       {/* Massive Frequency Readout & Zone Card */}
-      <div className="bg-studio-surface border border-studio-border/80 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-studio-surface border border-studio-border/80 rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
         {/* Hertz Number */}
         <div className="flex items-baseline space-x-2">
-          <span className="text-4xl sm:text-5xl font-mono font-black text-cyan-300 tracking-tight">
+          <span className="text-3xl sm:text-4xl lg:text-5xl font-mono font-black text-cyan-300 tracking-tight">
             {frequency >= 1000 ? (frequency / 1000).toFixed(2) : frequency.toFixed(0)}
           </span>
-          <span className="text-xl sm:text-2xl font-mono font-bold text-cyan-500">
+          <span className="text-lg sm:text-xl lg:text-2xl font-mono font-bold text-cyan-500">
             {frequency >= 1000 ? 'kHz' : 'Hz'}
           </span>
           <span className="text-xs font-mono text-slate-500 ml-1">
@@ -181,10 +187,10 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
         </div>
 
         {/* Current Zone Badge & Educational Helper */}
-        <div className="flex-1 max-w-lg bg-studio-panel/70 p-3 rounded-xl border border-studio-border/60">
+        <div className="flex-1 max-w-lg bg-studio-panel/70 p-2.5 sm:p-3 rounded-xl border border-studio-border/60">
           <div className="flex items-center space-x-2 mb-1">
             <span
-              className="w-2.5 h-2.5 rounded-full"
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               style={{ backgroundColor: currentZone.color }}
             />
             <span className="text-xs font-bold text-slate-200">
@@ -208,7 +214,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
 
       {/* Smooth Logarithmic Frequency Slider */}
       <div className="flex flex-col gap-1.5">
-        <div className="flex justify-between text-xs font-mono text-slate-400 px-1">
+        <div className="flex justify-between text-[11px] sm:text-xs font-mono text-slate-400 px-1">
           <span>20 Hz {lang === 'zh' ? '(极低频)' : '(Sub)'}</span>
           <span>100 Hz</span>
           <span>500 Hz</span>
@@ -228,7 +234,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
       </div>
 
       {/* Navigation Controls: Auto-Scan & Nudge Buttons */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-studio-border/50">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 pt-2 border-t border-studio-border/50">
         {/* Auto-Walk Player */}
         <div className="flex items-center space-x-2">
           <button
@@ -236,7 +242,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
               if (!isAudioRunning) onStartAudio();
               onToggleAutoScan('normal');
             }}
-            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow active:scale-95 ${
+            className={`flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition shadow active:scale-95 ${
               isAutoScanning
                 ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 ring-2 ring-amber-400/40 animate-pulse'
                 : 'bg-studio-surface hover:bg-slate-700 text-slate-200 border border-studio-border'
@@ -280,7 +286,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
         </div>
 
         {/* Nudge Stepper Buttons */}
-        <div className="flex items-center space-x-1.5 text-xs font-mono">
+        <div className="flex items-center space-x-1 sm:space-x-1.5 text-xs font-mono">
           <span className="text-slate-500 text-[11px] mr-1 hidden sm:inline">{t.fineTune}</span>
           <button
             onClick={() => nudge(-100)}
@@ -317,14 +323,14 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
         </div>
       </div>
 
-      {/* Expanded Quick Jump Frequency Landmarks: Compact, Tight Layout */}
+      {/* Quick Jump Frequency Landmarks: Compact & Collapsible */}
       <div className="flex flex-col gap-2 pt-2 border-t border-studio-border/50">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center space-x-2">
             <span className="text-[11px] text-slate-400 uppercase font-mono tracking-wider font-semibold">
               {t.jumpTitle}
             </span>
-            <span className="text-[10px] text-slate-500 font-mono">
+            <span className="text-[10px] text-slate-500 font-mono hidden xs:inline">
               {t.jumpSubtitle}
             </span>
           </div>
@@ -347,9 +353,9 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
           </div>
         </div>
 
-        {/* Tight, Compact Card Grid (3 to 10 columns) */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-1.5 max-h-64 overflow-y-auto pr-1 scrollbar-thin">
-          {filteredLandmarks.map((lm) => {
+        {/* Card Grid */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 xl:grid-cols-6 gap-1.5 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
+          {displayedLandmarks.map((lm) => {
             const isCurrent = Math.abs(frequency - lm.exactFreq) / lm.exactFreq < 0.025;
             const freqStr = formatFreq(lm.exactFreq);
             const lmName = lang === 'zh' && lm.nameZh ? lm.nameZh : lm.name;
@@ -389,6 +395,22 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
             );
           })}
         </div>
+
+        {/* Expand / Collapse All 54 Landmarks Button */}
+        {filteredLandmarks.length > 12 && (
+          <button
+            type="button"
+            onClick={() => setIsLandmarksExpanded((prev) => !prev)}
+            className="w-full py-1 text-center text-[11px] font-mono text-slate-400 hover:text-cyan-300 border border-dashed border-studio-border/80 hover:border-cyan-500/40 rounded-lg transition flex items-center justify-center gap-1 mt-0.5"
+          >
+            <span>{isLandmarksExpanded ? t.toggleLandmarksHide : `${t.toggleLandmarksShow} (${filteredLandmarks.length})`}</span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                isLandmarksExpanded ? 'rotate-180 text-cyan-400' : ''
+              }`}
+            />
+          </button>
+        )}
       </div>
     </div>
   );

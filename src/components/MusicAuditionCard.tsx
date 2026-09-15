@@ -90,7 +90,7 @@ export const MusicAuditionCard: React.FC<MusicAuditionCardProps> = ({
   ];
 
   return (
-    <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-4">
+    <div id="step-3-audition" className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-4">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">

@@ -27,15 +27,15 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
   };
 
   return (
-    <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-3">
-      <div className="flex items-center justify-between border-b border-studio-border/60 pb-3">
+    <div id="step-5-ledger" className="bg-studio-panel border border-studio-border rounded-2xl p-3.5 sm:p-5 shadow-xl flex flex-col gap-3">
+      <div className="flex items-center justify-between border-b border-studio-border/60 pb-2.5 sm:pb-3">
         <div className="flex items-center space-x-2">
           <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center border border-cyan-500/40">
-            4
+            5
           </span>
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
             <ListChecks className="w-4 h-4 text-cyan-400" />
-            {t.step4Title} ({fixes.length})
+            {t.step5SectionTitle} ({fixes.length})
           </h2>
         </div>
 
@@ -51,13 +51,13 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
       </div>
 
       {fixes.length === 0 ? (
-        <div className="py-6 text-center text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
+        <div className="py-5 sm:py-6 text-center text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
           <p className="max-w-md text-slate-400 leading-relaxed">
             {t.noFixesYet}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1 scrollbar-thin">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 sm:max-h-72 lg:max-h-80 overflow-y-auto pr-1 scrollbar-thin">
           {fixes.map((fix) => {
             const isCut = fix.gain < 0;
             return (
