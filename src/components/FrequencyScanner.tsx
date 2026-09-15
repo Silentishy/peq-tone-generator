@@ -82,6 +82,27 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
     }
   };
 
+  const handleLandmarksScroll = () => {
+    const container = landmarksContainerRef.current;
+    if (!container) return;
+    const scrollTop = container.scrollTop;
+    const containerTop = container.offsetTop;
+
+    const sections: CategorySection[] = ['bass', 'mids', 'treble', 'air'];
+    let visibleCat: CategorySection = 'bass';
+
+    for (const cat of sections) {
+      const el = container.querySelector(`[data-category="${cat}"]`) as HTMLElement | null;
+      if (el) {
+        const top = el.offsetTop - containerTop;
+        if (scrollTop >= top - 20) {
+          visibleCat = cat;
+        }
+      }
+    }
+    setActiveCategory(visibleCat);
+  };
+
   const categories: { key: CategorySection; label: string; count: number }[] = [
     {
       key: 'bass',
@@ -356,6 +377,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
         {/* 3-Row Scrollable Card Grid */}
         <div
           ref={landmarksContainerRef}
+          onScroll={handleLandmarksScroll}
           className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 xl:grid-cols-6 gap-1.5 h-[148px] overflow-y-auto pr-1 scrollbar-thin scroll-smooth"
         >
           {FREQUENCY_LANDMARKS.map((lm) => {

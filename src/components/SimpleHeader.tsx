@@ -110,7 +110,7 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
                   <Keyboard className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 line-clamp-1">
+              <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 leading-snug">
                 {t.appSubtitle}
               </p>
             </div>
@@ -232,7 +232,36 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
             </div>
           </div>
 
-          {/* Desktop Language Switcher */}
+          {/* A/B Compare Switch */}
+          <button
+            onClick={onToggleBypass}
+            className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition active:scale-95 ${
+              isBypassed
+                ? 'bg-amber-500/15 border-amber-400 text-amber-300 font-bold'
+                : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
+            }`}
+            title={t.bypassTooltip}
+          >
+            <span className="w-2 h-2 rounded-full bg-current inline-block" />
+            <span>{isBypassed ? t.bypassOn : t.bypassOff}</span>
+          </button>
+
+          {/* Export / Import Button - Prominently Noticeable */}
+          <button
+            onClick={onOpenExport}
+            className="flex items-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-4 py-2 bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 hover:from-emerald-300 hover:to-sky-300 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-cyan-500/25 ring-2 ring-cyan-300/60 hover:scale-105 active:scale-95 transition-all"
+            title={t.exportFixes}
+          >
+            <Share2 className="w-4 h-4 flex-shrink-0" />
+            <span className="tracking-wide">{t.exportFixes}</span>
+            {fixesCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 bg-slate-950 text-cyan-300 font-black rounded-full text-[10px] font-mono shadow-inner">
+                {fixesCount}
+              </span>
+            )}
+          </button>
+
+          {/* Desktop Language Switcher (Moved next to GitHub) */}
           <div className="relative hidden md:block" ref={langMenuRef}>
             <button
               onClick={() => setIsLangMenuOpen((prev) => !prev)}
@@ -287,35 +316,6 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
               </div>
             )}
           </div>
-
-          {/* A/B Compare Switch */}
-          <button
-            onClick={onToggleBypass}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition active:scale-95 ${
-              isBypassed
-                ? 'bg-amber-500/15 border-amber-400 text-amber-300 font-bold'
-                : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
-            }`}
-            title={t.bypassTooltip}
-          >
-            <span className="w-2 h-2 rounded-full bg-current inline-block" />
-            <span>{isBypassed ? t.bypassOn : t.bypassOff}</span>
-          </button>
-
-          {/* Export / Import Button - Prominently Noticeable */}
-          <button
-            onClick={onOpenExport}
-            className="flex items-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-4 py-2 bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 hover:from-emerald-300 hover:to-sky-300 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-cyan-500/25 ring-2 ring-cyan-300/60 hover:scale-105 active:scale-95 transition-all"
-            title={t.exportFixes}
-          >
-            <Share2 className="w-4 h-4 flex-shrink-0" />
-            <span className="tracking-wide">{t.exportFixes}</span>
-            {fixesCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-slate-950 text-cyan-300 font-black rounded-full text-[10px] font-mono shadow-inner">
-                {fixesCount}
-              </span>
-            )}
-          </button>
 
           {/* Desktop GitHub Link */}
           <a

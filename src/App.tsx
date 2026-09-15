@@ -282,6 +282,18 @@ export const App: React.FC = () => {
     updateActiveProfileFixes(updated);
   };
 
+  const handleSelectFixFromLedger = (freq: number) => {
+    handleChangeFrequency(freq);
+    const fixerEl = document.getElementById('step-2-fixer');
+    if (fixerEl) {
+      fixerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      fixerEl.classList.add('ring-2', 'ring-cyan-400');
+      setTimeout(() => {
+        fixerEl.classList.remove('ring-2', 'ring-cyan-400');
+      }, 1500);
+    }
+  };
+
   const handleClearAllFixes = () => {
     if (window.confirm(t.confirmClear)) {
       updateActiveProfileFixes([]);
@@ -469,7 +481,8 @@ export const App: React.FC = () => {
             <section>
               <MyFixesList
                 fixes={fixes}
-                onSelectFix={handleChangeFrequency}
+                currentFreq={frequency}
+                onSelectFix={handleSelectFixFromLedger}
                 onRemoveFix={handleRemoveFix}
                 onClearAll={handleClearAllFixes}
               />
