@@ -70,6 +70,14 @@ npm run build
 npm run preview
 ```
 
+### 运行测试
+```bash
+npm test            # 运行一次完整单元测试 (Vitest)
+npm run test:watch  # 监听文件变化自动重跑
+```
+
+测试套件覆盖 `src/utils/eqMath.ts` 中的参数 EQ 核心：Equalizer APO / Wavelet / 通用表格三种导出格式、反向导入解析器（含低音搁架往返回归测试）、RBJ 双二阶滤波器系数与稳定性、解析式频响计算、动态余量 / 前级增益计算，以及画布坐标辅助函数。CI 会在每次推送与 Pull Request 时自动执行类型检查、构建与测试。
+
 ---
 
 ## 📄 开源许可

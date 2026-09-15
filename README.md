@@ -58,6 +58,14 @@ npm run build
 npm run preview
 ```
 
+### Tests
+```bash
+npm test          # run the unit test suite once (Vitest)
+npm run test:watch  # re-run on file changes
+```
+
+The suite covers the parametric EQ core in `src/utils/eqMath.ts`: the Equalizer APO / Wavelet / Universal Table export formats, the reverse import parser (including bass-shelf round-trips), RBJ biquad coefficient math and stability, the analytical frequency-response evaluator, headroom/preamp calculation, and the canvas coordinate helpers. CI runs type-check, build, and tests on every push and pull request.
+
 ---
 
 ## 📄 License
