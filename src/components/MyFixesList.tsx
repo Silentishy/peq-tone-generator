@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Volume2, ListChecks, Edit3, Undo2 } from 'lucide-react';
+import { Trash2, Volume2, ListChecks, Edit3 } from 'lucide-react';
 import { EQFix } from '../types/audio';
 import { WIDTH_MAP } from '../utils/eqMath';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,8 +10,6 @@ interface MyFixesListProps {
   onSelectFix: (freq: number) => void;
   onRemoveFix: (id: string) => void;
   onClearAll: () => void;
-  canUndo?: boolean;
-  onUndo?: () => void;
 }
 
 export const MyFixesList: React.FC<MyFixesListProps> = ({
@@ -20,8 +18,6 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
   onSelectFix,
   onRemoveFix,
   onClearAll,
-  canUndo,
-  onUndo,
 }) => {
   const { t, lang } = useLanguage();
 
@@ -45,28 +41,15 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
           </h2>
         </div>
 
-        <div className="flex items-center gap-3">
-          {canUndo && onUndo && (
-            <button
-              onClick={onUndo}
-              className="text-xs text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1"
-              title={t.undoTooltip}
-            >
-              <Undo2 className="w-3.5 h-3.5" />
-              <span>{t.undoBtn}</span>
-            </button>
-          )}
-
-          {fixes.length > 0 && (
-            <button
-              onClick={onClearAll}
-              className="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>{t.clearAll}</span>
-            </button>
-          )}
-        </div>
+        {fixes.length > 0 && (
+          <button
+            onClick={onClearAll}
+            className="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{t.clearAll}</span>
+          </button>
+        )}
       </div>
 
       {fixes.length === 0 ? (

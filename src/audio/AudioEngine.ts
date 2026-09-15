@@ -104,6 +104,7 @@ export class AudioEngine {
   private audioElement: HTMLAudioElement | null = null;
   private mediaSourceNode: MediaElementAudioSourceNode | null = null;
   private musicFileName: string = '';
+  private musicObjectUrl: string | null = null;
   private isBenchmarkTrack: boolean = false;
   private isMusicLooping: boolean = true;
   private isMusicPlaying: boolean = false;
@@ -629,11 +630,34 @@ export class AudioEngine {
 
   public loadMusicFile(file: File): void {
     this.initContext();
+    this.revokeMusicObjectUrl();
     this.musicFileName = file.name;
     this.isBenchmarkTrack = false;
     const url = URL.createObjectURL(file);
+    this.musicObjectUrl = url;
     if (this.audioElement) {
       this.audioElement.src = url;
+      this.audioElement.load();
+    }
+    this.notifyMusicState();
+  }
+
+  private revokeMusicObjectUrl(): void {
+    if (this.musicObjectUrl) {
+      URL.revokeObjectURL(this.musicObjectUrl);
+      this.musicObjectUrl = null;
+    }
+  }
+
+  /** Unloads the currently loaded user-uploaded song and frees its memory. */
+  public removeMusic(): void {
+    if (!this.musicFileName) return;
+    this.pauseMusic();
+    this.revokeMusicObjectUrl();
+    this.musicFileName = '';
+    this.isBenchmarkTrack = false;
+    if (this.audioElement) {
+      this.audioElement.removeAttribute('src');
       this.audioElement.load();
     }
     this.notifyMusicState();
@@ -749,6 +773,8 @@ export class AudioEngine {
 
     const wavBlob = audioBufferToWavBlob(buffer);
     const blobUrl = URL.createObjectURL(wavBlob);
+    this.revokeMusicObjectUrl();
+    this.musicObjectUrl = blobUrl;
 
     this.musicFileName = trackName;
     this.isBenchmarkTrack = true;

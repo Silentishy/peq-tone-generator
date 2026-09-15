@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Check,
   Keyboard,
+  Undo2,
 } from 'lucide-react';
 import { GitHubIcon } from './GitHubIcon';
 import { ProfileSelector } from './ProfileSelector';
@@ -37,6 +38,8 @@ interface SimpleHeaderProps {
   onRenameProfile: (id: string, name: string) => void;
   onDeleteProfile: (id: string) => void;
   effectivePreamp: number;
+  canUndo?: boolean;
+  onUndo?: () => void;
 }
 
 const LANGUAGE_OPTIONS: { code: Language; label: string; subLabel: string }[] = [
@@ -62,6 +65,8 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
   onRenameProfile,
   onDeleteProfile,
   effectivePreamp,
+  canUndo,
+  onUndo,
 }) => {
   const { t, lang, setLang } = useLanguage();
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -231,6 +236,21 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
               <span>{effectivePreamp < 0 ? `${effectivePreamp.toFixed(1)}dB` : t.safeLimit}</span>
             </div>
           </div>
+
+          {/* Undo Button */}
+          <button
+            onClick={onUndo}
+            disabled={!canUndo || !onUndo}
+            className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition active:scale-95 ${
+              canUndo
+                ? 'bg-studio-panel border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/15 hover:text-cyan-200 shadow-sm'
+                : 'bg-studio-panel border-studio-border text-slate-500 cursor-default opacity-60'
+            }`}
+            title={t.undoTooltip}
+          >
+            <Undo2 className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">{t.undoBtn}</span>
+          </button>
 
           {/* A/B Compare Switch */}
           <button

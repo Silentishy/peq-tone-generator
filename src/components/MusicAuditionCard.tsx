@@ -9,6 +9,7 @@ import {
   Sliders,
   Sparkles,
   Zap,
+  Trash2,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { MusicState } from '../audio/AudioEngine';
@@ -17,6 +18,7 @@ import { BenchmarkTrackId } from '../types/audio';
 interface MusicAuditionCardProps {
   musicState: MusicState;
   onUploadFile: (file: File) => void;
+  onRemoveMusic: () => void;
   onSelectBenchmarkTrack: (trackId: BenchmarkTrackId) => void;
   onTogglePlay: () => void;
   onSeek: (seconds: number) => void;
@@ -36,6 +38,7 @@ function formatTime(sec: number): string {
 export const MusicAuditionCard: React.FC<MusicAuditionCardProps> = ({
   musicState,
   onUploadFile,
+  onRemoveMusic,
   onSelectBenchmarkTrack,
   onTogglePlay,
   onSeek,
@@ -204,18 +207,29 @@ export const MusicAuditionCard: React.FC<MusicAuditionCardProps> = ({
               </div>
             </div>
 
-            {/* Loop Toggle Button */}
-            <button
-              onClick={onToggleLoop}
-              className={`p-2 rounded-xl border text-xs transition ${
-                musicState.isLooping
-                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                  : 'bg-studio-panel border-studio-border text-slate-500 hover:text-slate-300'
-              }`}
-              title={t.loopTooltip}
-            >
-              <Repeat className="w-3.5 h-3.5" />
-            </button>
+            {/* Remove Uploaded Song + Loop Toggle Buttons */}
+            <div className="flex items-center space-x-1.5 flex-shrink-0">
+              {!musicState.isBenchmark && (
+                <button
+                  onClick={onRemoveMusic}
+                  className="p-2 rounded-xl border bg-studio-panel border-studio-border text-slate-500 hover:text-rose-400 hover:border-rose-500/40 transition"
+                  title={t.removeMusicTooltip}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                onClick={onToggleLoop}
+                className={`p-2 rounded-xl border text-xs transition ${
+                  musicState.isLooping
+                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                    : 'bg-studio-panel border-studio-border text-slate-500 hover:text-slate-300'
+                }`}
+                title={t.loopTooltip}
+              >
+                <Repeat className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Time & Scrub Slider */}

@@ -80,6 +80,7 @@ export interface Translations {
   uploadMusicBtn: string;
   uploadMusicDesc: string;
   changeMusic: string;
+  removeMusicTooltip: string;
   playMusic: string;
   pauseMusic: string;
   loopTooltip: string;
@@ -289,6 +290,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     uploadMusicBtn: 'Upload Audio File',
     uploadMusicDesc: 'Supports MP3, WAV, FLAC, AAC, M4A, OGG',
     changeMusic: 'Change Song',
+    removeMusicTooltip: 'Remove this uploaded song and free its memory',
     playMusic: 'PLAY MUSIC',
     pauseMusic: 'PAUSE',
     loopTooltip: 'Loop playback',
@@ -497,6 +499,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     uploadMusicBtn: '上传本地音频',
     uploadMusicDesc: '支持 MP3, WAV, FLAC, AAC, M4A, OGG 等格式',
     changeMusic: '更换本地歌曲',
+    removeMusicTooltip: '移除已上传的歌曲并释放内存',
     playMusic: '播放音乐',
     pauseMusic: '暂停播放',
     loopTooltip: '单曲循环',

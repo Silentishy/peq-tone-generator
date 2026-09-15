@@ -191,6 +191,10 @@ export const App: React.FC = () => {
     engine.loadMusicFile(file);
   };
 
+  const handleRemoveMusic = () => {
+    engine.removeMusic();
+  };
+
   const handleSelectBenchmarkTrack = (trackId: BenchmarkTrackId) => {
     engine.loadBenchmarkTrack(trackId);
     handleToggleMusicPlay();
@@ -456,6 +460,8 @@ export const App: React.FC = () => {
         onRenameProfile={handleRenameProfile}
         onDeleteProfile={handleDeleteProfile}
         effectivePreamp={effectivePreamp}
+        canUndo={undoStack.length > 0}
+        onUndo={handleUndo}
       />
 
       {/* Main Container */}
@@ -498,6 +504,7 @@ export const App: React.FC = () => {
               <MusicAuditionCard
                 musicState={musicState}
                 onUploadFile={handleUploadMusicFile}
+                onRemoveMusic={handleRemoveMusic}
                 onSelectBenchmarkTrack={handleSelectBenchmarkTrack}
                 onTogglePlay={handleToggleMusicPlay}
                 onSeek={handleSeekMusic}
@@ -532,8 +539,6 @@ export const App: React.FC = () => {
                 onSelectFix={handleSelectFixFromLedger}
                 onRemoveFix={handleRemoveFix}
                 onClearAll={handleClearAllFixes}
-                canUndo={undoStack.length > 0}
-                onUndo={handleUndo}
               />
             </section>
           </div>
