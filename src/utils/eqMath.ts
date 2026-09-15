@@ -247,21 +247,31 @@ export function calculateHeadroom(fixes: EQFix[]): { maxBoost: number; suggested
 }
 
 /**
- * Coordinate helpers for log canvas
+ * Coordinate helpers for log canvas with configurable frequency range for zooming
  */
-export function freqToX(freq: number, width: number): number {
-  const clamped = Math.max(MIN_FREQ, Math.min(MAX_FREQ, freq));
-  const logMin = Math.log10(MIN_FREQ);
-  const logMax = Math.log10(MAX_FREQ);
+export function freqToX(
+  freq: number,
+  width: number,
+  minFreq = MIN_FREQ,
+  maxFreq = MAX_FREQ
+): number {
+  const clamped = Math.max(minFreq, Math.min(maxFreq, freq));
+  const logMin = Math.log10(minFreq);
+  const logMax = Math.log10(maxFreq);
   const logCurrent = Math.log10(clamped);
   return ((logCurrent - logMin) / (logMax - logMin)) * width;
 }
 
-export function xToFreq(x: number, width: number): number {
+export function xToFreq(
+  x: number,
+  width: number,
+  minFreq = MIN_FREQ,
+  maxFreq = MAX_FREQ
+): number {
   const clampedX = Math.max(0, Math.min(width, x));
   const ratio = clampedX / width;
-  const logMin = Math.log10(MIN_FREQ);
-  const logMax = Math.log10(MAX_FREQ);
+  const logMin = Math.log10(minFreq);
+  const logMax = Math.log10(maxFreq);
   return Math.pow(10, logMin + ratio * (logMax - logMin));
 }
 
@@ -275,6 +285,83 @@ export function yToGain(y: number, height: number, minGain = -15, maxGain = 15):
   const clampedY = Math.max(0, Math.min(height, y));
   const ratio = 1 - clampedY / height;
   return minGain + ratio * (maxGain - minGain);
+}
+
+/**
+ * Analytical frequency response calculation for all filters.
+ * Runs instantly without requiring an active Web Audio AudioContext, so curves
+ * render immediately on page load and stay perfectly synchronized.
+ */
+export function calculateCombinedFilterResponse(
+  fixes: EQFix[],
+  freqPoints: Float32Array,
+  sampleRate = 48000
+): Float32Array {
+  const dbResponse = new Float32Array(freqPoints.length).fill(0.0);
+  const activeFixes = fixes.filter((f) => f.enabled && f.gain !== 0);
+  if (activeFixes.length === 0) return dbResponse;
+
+  for (const fix of activeFixes) {
+    const f0 = fix.frequency;
+    const gain = fix.gain;
+    const q = Math.max(0.1, fix.q);
+    const isShelf = fix.filterType === 'lowshelf';
+
+    const A = Math.pow(10, gain / 40);
+    const w0 = (2 * Math.PI * f0) / sampleRate;
+    const cosW0 = Math.cos(w0);
+    const sinW0 = Math.sin(w0);
+
+    let b0 = 1, b1 = 0, b2 = 0, a0 = 1, a1 = 0, a2 = 0;
+
+    if (isShelf) {
+      const alpha = sinW0 / (2 * q);
+      const twoSqrtAAlpha = 2 * Math.sqrt(A) * alpha;
+      b0 = A * ((A + 1) - (A - 1) * cosW0 + twoSqrtAAlpha);
+      b1 = 2 * A * ((A - 1) - (A + 1) * cosW0);
+      b2 = A * ((A + 1) - (A - 1) * cosW0 - twoSqrtAAlpha);
+      a0 = (A + 1) + (A - 1) * cosW0 + twoSqrtAAlpha;
+      a1 = -2 * ((A - 1) + (A + 1) * cosW0);
+      a2 = (A + 1) + (A - 1) * cosW0 - twoSqrtAAlpha;
+    } else {
+      // Peaking / Bell filter
+      const alpha = sinW0 / (2 * q);
+      b0 = 1 + alpha * A;
+      b1 = -2 * cosW0;
+      b2 = 1 - alpha * A;
+      a0 = 1 + alpha / A;
+      a1 = -2 * cosW0;
+      a2 = 1 - alpha / A;
+    }
+
+    const nb0 = b0 / a0;
+    const nb1 = b1 / a0;
+    const nb2 = b2 / a0;
+    const na1 = a1 / a0;
+    const na2 = a2 / a0;
+
+    for (let i = 0; i < freqPoints.length; i++) {
+      const f = freqPoints[i];
+      const w = (2 * Math.PI * f) / sampleRate;
+      const cosW = Math.cos(w);
+      const sinW = Math.sin(w);
+      const cos2W = Math.cos(2 * w);
+      const sin2W = Math.sin(2 * w);
+
+      const numReal = nb0 + nb1 * cosW + nb2 * cos2W;
+      const numImag = -(nb1 * sinW + nb2 * sin2W);
+      const denReal = 1 + na1 * cosW + na2 * cos2W;
+      const denImag = -(na1 * sinW + na2 * sin2W);
+
+      const numMag2 = numReal * numReal + numImag * numImag;
+      const denMag2 = denReal * denReal + denImag * denImag;
+      const h2 = Math.max(1e-12, numMag2 / Math.max(1e-12, denMag2));
+
+      dbResponse[i] += 10 * Math.log10(h2);
+    }
+  }
+
+  return dbResponse;
 }
 
 /**

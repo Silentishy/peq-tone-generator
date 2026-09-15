@@ -97,7 +97,14 @@ export interface Translations {
   step3Subtitle: string;
   visualPreview: string;
   flatReference: string;
+  afterEqCurveLabel: string;
+  netPreampCurveLabel: string;
+  bypassedLabel: string;
   dragHint: string;
+  zoomIn: string;
+  zoomOut: string;
+  zoomReset: string;
+  dbScaleLabel: string;
 
   // Fixes List (Step 5)
   step4Title: string;
@@ -282,8 +289,15 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     step3Title: 'Live Frequency Response Curve',
     step3Subtitle: 'Drag nodes directly on the graph or click to jump',
     visualPreview: 'Visual Preview • 20 Hz – 20 kHz',
-    flatReference: '0 dB (Flat)',
-    dragHint: 'Drag nodes: horizontal = Freq, vertical = Gain. Scroll wheel = Width',
+    flatReference: '0 dB (Flat Reference)',
+    afterEqCurveLabel: 'Frequency Response After EQ',
+    netPreampCurveLabel: 'Net Output (with Preamp)',
+    bypassedLabel: 'BYPASS (Original 0 dB)',
+    dragHint: 'Drag nodes: horizontal = Freq, vertical = Gain. Scroll wheel = Width. Click +/- to zoom.',
+    zoomIn: 'Zoom In',
+    zoomOut: 'Zoom Out',
+    zoomReset: 'Reset Zoom',
+    dbScaleLabel: 'Scale:',
 
     // Fixes List
     step4Title: 'My EQ Fixes',
@@ -468,7 +482,14 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     step3Subtitle: '可直接在曲线上拖动节点微调，或点击空白处跳转试听',
     visualPreview: '可视化频响 • 20 Hz – 20 kHz',
     flatReference: '0 dB (基准参考线)',
-    dragHint: '直接拖拽节点：水平调节频率，垂直调节增益。滚轮调节宽度 (Q值)',
+    afterEqCurveLabel: 'EQ 修正后频响曲线',
+    netPreampCurveLabel: '净输出 (含前级增益)',
+    bypassedLabel: '直通原声 (0 dB)',
+    dragHint: '直接拖拽节点：水平调节频率，垂直调节增益。滚轮调节宽度，点击 +/- 可缩放视图。',
+    zoomIn: '放大视图',
+    zoomOut: '缩小视图',
+    zoomReset: '重置缩放',
+    dbScaleLabel: '刻度：',
 
     // Fixes List
     step4Title: '已应用的 EQ 修正清单',

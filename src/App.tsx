@@ -445,7 +445,7 @@ export const App: React.FC = () => {
           </div>
 
           {/* Right Column: Visual Curve & My Fixes Overview (Sticky on Wide Screens with Overflow Protection) */}
-          <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:scrollbar-thin lg:pr-1">
+          <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-5 lg:sticky lg:top-[76px] lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:scrollbar-thin lg:pr-1">
             {/* Step 4: Live EQ Response Curve with Draggable Nodes */}
             <section>
               <SimpleEQVisualizer
@@ -454,6 +454,8 @@ export const App: React.FC = () => {
                 onSelectFrequency={handleChangeFrequency}
                 onUpdateFix={handleUpdateFix}
                 isAudioRunning={isAudioRunning}
+                effectivePreamp={effectivePreamp}
+                isBypassed={isBypassed}
               />
             </section>
 

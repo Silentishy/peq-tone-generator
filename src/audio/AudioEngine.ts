@@ -1,5 +1,5 @@
 import { BenchmarkTrackId, EQFix, ToneMode } from '../types/audio';
-import { calculateEqualLoudnessGain, MIN_FREQ, MAX_FREQ } from '../utils/eqMath';
+import { calculateEqualLoudnessGain, calculateCombinedFilterResponse, MIN_FREQ, MAX_FREQ } from '../utils/eqMath';
 
 export interface MusicState {
   isLoaded: boolean;
@@ -126,6 +126,9 @@ export class AudioEngine {
   public static getInstance(): AudioEngine {
     if (!AudioEngine.instance) {
       AudioEngine.instance = new AudioEngine();
+      try {
+        AudioEngine.instance.initContext();
+      } catch {}
     }
     return AudioEngine.instance;
   }
@@ -525,42 +528,11 @@ export class AudioEngine {
     fixes: EQFix[],
     freqPoints: Float32Array
   ): Float32Array {
-    const magResponse = new Float32Array(freqPoints.length).fill(1.0);
-    const activeFixes = this.isBypassed
-      ? []
-      : fixes.filter((f) => f.enabled && f.gain !== 0);
-
-    if (activeFixes.length === 0 || !this.ctx) {
+    if (this.isBypassed) {
       return new Float32Array(freqPoints.length).fill(0.0);
     }
-
-    const tempFilter = this.ctx.createBiquadFilter();
-    const tempMag = new Float32Array(freqPoints.length);
-    const tempPhase = new Float32Array(freqPoints.length);
-
-    for (const fix of activeFixes) {
-      tempFilter.type = fix.filterType || 'peaking';
-      tempFilter.frequency.setValueAtTime(fix.frequency, this.ctx.currentTime);
-      tempFilter.gain.setValueAtTime(fix.gain, this.ctx.currentTime);
-      tempFilter.Q.setValueAtTime(fix.q, this.ctx.currentTime);
-
-      tempFilter.getFrequencyResponse(
-        freqPoints as unknown as Float32Array<ArrayBuffer>,
-        tempMag as unknown as Float32Array<ArrayBuffer>,
-        tempPhase as unknown as Float32Array<ArrayBuffer>
-      );
-      for (let i = 0; i < freqPoints.length; i++) {
-        magResponse[i] *= tempMag[i];
-      }
-    }
-
-    const dbResponse = new Float32Array(freqPoints.length);
-    for (let i = 0; i < freqPoints.length; i++) {
-      const mag = Math.max(1e-6, magResponse[i]);
-      dbResponse[i] = 20 * Math.log10(mag);
-    }
-
-    return dbResponse;
+    const sampleRate = this.ctx?.sampleRate || 48000;
+    return calculateCombinedFilterResponse(fixes, freqPoints, sampleRate);
   }
 
   // --- Auto-Scan / Frequency Walker ---
