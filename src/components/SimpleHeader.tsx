@@ -7,15 +7,18 @@ import {
   ShieldCheck,
   Share2,
   Headphones,
-  CheckCircle2,
   HelpCircle,
   Languages as LanguagesIcon,
   ChevronDown,
   Check,
+  Keyboard,
+  Sliders,
 } from 'lucide-react';
 import { GitHubIcon } from './GitHubIcon';
+import { ProfileSelector } from './ProfileSelector';
 import { useLanguage } from '../context/LanguageContext';
 import { Language } from '../utils/i18n';
+import { EQProfile } from '../types/audio';
 
 interface SimpleHeaderProps {
   isAudioRunning: boolean;
@@ -27,6 +30,14 @@ interface SimpleHeaderProps {
   fixesCount: number;
   onOpenExport: () => void;
   onOpenHelp: () => void;
+  onOpenShortcuts: () => void;
+  profiles: EQProfile[];
+  activeProfileId: string;
+  onSelectProfile: (id: string) => void;
+  onCreateProfile: (name: string) => void;
+  onRenameProfile: (id: string, name: string) => void;
+  onDeleteProfile: (id: string) => void;
+  effectivePreamp: number;
 }
 
 const LANGUAGE_OPTIONS: { code: Language; label: string; subLabel: string }[] = [
@@ -44,6 +55,14 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
   fixesCount,
   onOpenExport,
   onOpenHelp,
+  onOpenShortcuts,
+  profiles,
+  activeProfileId,
+  onSelectProfile,
+  onCreateProfile,
+  onRenameProfile,
+  onDeleteProfile,
+  effectivePreamp,
 }) => {
   const { t, lang, setLang } = useLanguage();
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -83,6 +102,13 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
               >
                 <HelpCircle className="w-4 h-4" />
               </button>
+              <button
+                onClick={onOpenShortcuts}
+                className="text-slate-400 hover:text-cyan-300 transition"
+                title={t.shortcutsTooltip}
+              >
+                <Keyboard className="w-4 h-4" />
+              </button>
             </div>
             <p className="text-xs text-slate-400">
               {t.appSubtitle}
@@ -90,12 +116,22 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Play/Stop & Volume */}
+        {/* Center: Profile Switcher & Audio Transport */}
         <div className="flex items-center flex-wrap gap-3">
-          {/* Big Start / Stop Listening Button */}
+          {/* Device Profile Selector */}
+          <ProfileSelector
+            profiles={profiles}
+            activeProfileId={activeProfileId}
+            onSelectProfile={onSelectProfile}
+            onCreateProfile={onCreateProfile}
+            onRenameProfile={onRenameProfile}
+            onDeleteProfile={onDeleteProfile}
+          />
+
+          {/* Big Start / Stop Tone Button */}
           <button
             onClick={onToggleAudio}
-            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 ${
+            className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-md active:scale-95 ${
               isAudioRunning
                 ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-950/50 ring-2 ring-rose-400/40 animate-pulse'
                 : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-950/40 font-black'
@@ -103,19 +139,19 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
           >
             {isAudioRunning ? (
               <>
-                <Square className="w-4 h-4 fill-current" />
+                <Square className="w-3.5 h-3.5 fill-current" />
                 <span>{t.stopTone}</span>
               </>
             ) : (
               <>
-                <Play className="w-4 h-4 fill-current" />
+                <Play className="w-3.5 h-3.5 fill-current" />
                 <span>{t.playTone}</span>
               </>
             )}
           </button>
 
-          {/* Volume & Ear Safety */}
-          <div className="flex items-center space-x-2 bg-studio-panel px-3 py-2 rounded-xl border border-studio-border">
+          {/* Volume & Headroom Display */}
+          <div className="flex items-center space-x-2 bg-studio-panel px-3 py-1.5 rounded-xl border border-studio-border">
             <button
               onClick={() => onVolumeChange(volume === 0 ? 0.25 : 0)}
               className="text-slate-400 hover:text-cyan-400 transition"
@@ -130,18 +166,24 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
               step="0.02"
               value={volume}
               onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
-              className="w-20 sm:w-28 h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-cyan-400"
+              className="w-16 sm:w-24 h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-cyan-400"
               title={t.volume}
             />
-            <span className="text-xs font-mono text-slate-300 w-9 text-right">
+            <span className="text-xs font-mono text-slate-300 w-8 text-right">
               {Math.round(volume * 100)}%
             </span>
+
+            {/* Preamp Headroom Status Badge */}
             <div
-              className="hidden sm:flex items-center text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-              title={t.safeTooltip}
+              className={`hidden sm:flex items-center text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                effectivePreamp < 0
+                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              }`}
+              title={`${t.headroomLabel} ${effectivePreamp >= 0 ? '+' : ''}${effectivePreamp.toFixed(1)} dB`}
             >
               <ShieldCheck className="w-3 h-3 mr-1" />
-              {t.safeLimit}
+              <span>{effectivePreamp < 0 ? `${effectivePreamp.toFixed(1)}dB` : t.safeLimit}</span>
             </div>
           </div>
         </div>
@@ -218,10 +260,10 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
             <span>{isBypassed ? t.bypassOn : t.bypassOff}</span>
           </button>
 
-          {/* Export Button */}
+          {/* Export / Import Button */}
           <button
             onClick={onOpenExport}
-            className="flex items-center space-x-1.5 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-cyan-950/40 transition active:scale-95"
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-cyan-950/40 transition active:scale-95"
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>{t.exportFixes}</span>

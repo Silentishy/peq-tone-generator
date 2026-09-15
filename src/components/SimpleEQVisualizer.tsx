@@ -1,29 +1,32 @@
-import React, { useRef, useEffect } from 'react';
-import { EQFix } from '../types/audio';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { EQFix, FilterWidth } from '../types/audio';
 import { AudioEngine } from '../audio/AudioEngine';
-import { freqToX, xToFreq, gainToY, MIN_FREQ, MAX_FREQ, MIN_GAIN, MAX_GAIN } from '../utils/eqMath';
+import {
+  freqToX,
+  xToFreq,
+  gainToY,
+  yToGain,
+  MIN_FREQ,
+  MAX_FREQ,
+  MIN_GAIN,
+  MAX_GAIN,
+  WIDTH_MAP,
+} from '../utils/eqMath';
 import { useLanguage } from '../context/LanguageContext';
 
 interface SimpleEQVisualizerProps {
   fixes: EQFix[];
   currentFreq: number;
   onSelectFrequency: (freq: number) => void;
+  onUpdateFix?: (fix: EQFix) => void;
   isAudioRunning: boolean;
 }
-
-const FREQ_LANDMARKS = [
-  { freq: 60, label: 'Bass (60)' },
-  { freq: 250, label: 'Low-Mid (250)' },
-  { freq: 1000, label: 'Vocals (1k)' },
-  { freq: 4000, label: 'Presence (4k)' },
-  { freq: 8000, label: 'Treble (8k)' },
-  { freq: 16000, label: 'Air (16k)' },
-];
 
 export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   fixes,
   currentFreq,
   onSelectFrequency,
+  onUpdateFix,
   isAudioRunning,
 }) => {
   const { t, lang } = useLanguage();
@@ -32,6 +35,9 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   const engine = AudioEngine.getInstance();
   const freqPointsRef = useRef<Float32Array | null>(null);
   const numPoints = 256;
+
+  const [draggingFixId, setDraggingFixId] = useState<string | null>(null);
+  const [hoveredFixId, setHoveredFixId] = useState<string | null>(null);
 
   const freqLandmarks = [
     { freq: 60, label: lang === 'zh' ? '低频 (60)' : 'Bass (60)' },
@@ -172,20 +178,34 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
         ctx.stroke();
       }
 
-      // 5. User Fix Dots & Badges
+      // 5. User Fix Dots & Badges (Interactive Draggable Handles)
       fixes.forEach((fix) => {
         if (!fix.enabled || fix.gain === 0) return;
         const x = freqToX(fix.frequency, width);
         const y = gainToY(fix.gain, height, -12, 12);
         const isCut = fix.gain < 0;
+        const isHovered = fix.id === hoveredFixId;
+        const isDragging = fix.id === draggingFixId;
+
+        ctx.save();
+
+        // Outer halo when hovered or dragging
+        if (isHovered || isDragging) {
+          ctx.beginPath();
+          ctx.arc(x, y, 16, 0, Math.PI * 2);
+          ctx.fillStyle = isCut ? 'rgba(244, 63, 94, 0.25)' : 'rgba(56, 189, 248, 0.25)';
+          ctx.fill();
+          ctx.strokeStyle = isCut ? '#f43f5e' : '#38bdf8';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
 
         // Glowing circle
-        ctx.save();
         ctx.beginPath();
-        ctx.arc(x, y, 7, 0, Math.PI * 2);
+        ctx.arc(x, y, isHovered || isDragging ? 9 : 7, 0, Math.PI * 2);
         ctx.fillStyle = isCut ? '#f43f5e' : '#38bdf8';
         ctx.shadowColor = isCut ? '#f43f5e' : '#38bdf8';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = isDragging ? 12 : 8;
         ctx.fill();
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
@@ -247,7 +267,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
 
     render();
     return () => cancelAnimationFrame(animId);
-  }, [fixes, currentFreq, isAudioRunning]);
+  }, [fixes, currentFreq, isAudioRunning, hoveredFixId, draggingFixId]);
 
   // Handle Resize
   useEffect(() => {
@@ -272,19 +292,148 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // --- Node Hit-testing & Dragging ---
+  const findFixAtPos = useCallback(
+    (clientX: number, clientY: number): string | null => {
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const dpr = window.devicePixelRatio || 1;
+      const width = canvas.width / dpr;
+      const height = canvas.height / dpr;
+
+      for (let i = fixes.length - 1; i >= 0; i--) {
+        const fix = fixes[i];
+        if (!fix.enabled || fix.gain === 0) continue;
+        const fx = freqToX(fix.frequency, width);
+        const fy = gainToY(fix.gain, height, -12, 12);
+        const dist = Math.hypot(x - fx, y - fy);
+        if (dist <= 16) {
+          return fix.id;
+        }
+      }
+      return null;
+    },
+    [fixes]
+  );
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const hitId = findFixAtPos(e.clientX, e.clientY);
+    if (hitId) {
+      setDraggingFixId(hitId);
+      const fix = fixes.find((f) => f.id === hitId);
+      if (fix) onSelectFrequency(fix.frequency);
+    } else {
+      // Jump frequency on empty canvas click
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const dpr = window.devicePixelRatio || 1;
+      const width = canvas.width / dpr;
+      const freq = Math.round(xToFreq(x, width));
+      onSelectFrequency(freq);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const width = rect.width;
-    const freq = Math.round(xToFreq(x, width));
-    onSelectFrequency(freq);
+    const y = e.clientY - rect.top;
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.width / dpr;
+    const height = canvas.height / dpr;
+
+    if (draggingFixId && onUpdateFix) {
+      const fix = fixes.find((f) => f.id === draggingFixId);
+      if (fix) {
+        const rawFreq = xToFreq(x, width);
+        const newFreq = Math.round(Math.max(MIN_FREQ, Math.min(MAX_FREQ, rawFreq)));
+        const rawGain = yToGain(y, height, -12, 12);
+        const newGain = Math.round(Math.max(MIN_GAIN, Math.min(MAX_GAIN, rawGain)) * 2) / 2; // snap to 0.5dB
+
+        const updated = { ...fix, frequency: newFreq, gain: newGain };
+        onUpdateFix(updated);
+        onSelectFrequency(newFreq);
+      }
+    } else {
+      const hit = findFixAtPos(e.clientX, e.clientY);
+      setHoveredFixId(hit);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (draggingFixId) {
+      setDraggingFixId(null);
+    }
+  };
+
+  // Scroll wheel on a node cycles filter width (narrow <-> normal <-> wide)
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    const targetId = hoveredFixId || draggingFixId;
+    if (!targetId || !onUpdateFix) return;
+    e.preventDefault();
+
+    const fix = fixes.find((f) => f.id === targetId);
+    if (!fix) return;
+
+    const widths: FilterWidth[] = ['narrow', 'normal', 'wide'];
+    const currentIdx = widths.indexOf(fix.width);
+    const nextIdx = e.deltaY < 0 ? (currentIdx - 1 + 3) % 3 : (currentIdx + 1) % 3;
+    const nextWidth = widths[nextIdx];
+
+    onUpdateFix({
+      ...fix,
+      width: nextWidth,
+      q: WIDTH_MAP[nextWidth].q,
+    });
+  };
+
+  // Touch Support
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      const hitId = findFixAtPos(touch.clientX, touch.clientY);
+      if (hitId) {
+        setDraggingFixId(hitId);
+        const fix = fixes.find((f) => f.id === hitId);
+        if (fix) onSelectFrequency(fix.frequency);
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!draggingFixId || !onUpdateFix || e.touches.length === 0) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.width / dpr;
+    const height = canvas.height / dpr;
+
+    const fix = fixes.find((f) => f.id === draggingFixId);
+    if (fix) {
+      const rawFreq = xToFreq(x, width);
+      const newFreq = Math.round(Math.max(MIN_FREQ, Math.min(MAX_FREQ, rawFreq)));
+      const rawGain = yToGain(y, height, -12, 12);
+      const newGain = Math.round(Math.max(MIN_GAIN, Math.min(MAX_GAIN, rawGain)) * 2) / 2;
+
+      const updated = { ...fix, frequency: newFreq, gain: newGain };
+      onUpdateFix(updated);
+      onSelectFrequency(newFreq);
+    }
   };
 
   return (
     <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-1">
         <div className="flex items-center space-x-2">
           <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center border border-cyan-500/40">
             3
@@ -293,16 +442,29 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
             {t.step3Title}
           </h2>
         </div>
-        <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
-          {t.step3Subtitle}
+        <span className="text-[10px] font-mono text-cyan-400/90 hidden sm:inline">
+          {t.dragHint}
         </span>
       </div>
 
       <div
         ref={containerRef}
-        className="relative w-full h-52 sm:h-64 lg:h-72 rounded-xl overflow-hidden border border-studio-border bg-studio-surface shadow-inner cursor-crosshair select-none"
+        className="relative w-full h-52 sm:h-64 lg:h-72 rounded-xl overflow-hidden border border-studio-border bg-studio-surface shadow-inner select-none"
       >
-        <canvas ref={canvasRef} onClick={handleCanvasClick} className="w-full h-full block" />
+        <canvas
+          ref={canvasRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleMouseUp}
+          className={`w-full h-full block ${
+            draggingFixId ? 'cursor-grabbing' : hoveredFixId ? 'cursor-grab' : 'cursor-crosshair'
+          }`}
+        />
         <div className="absolute top-2 left-3 pointer-events-none text-[10px] font-mono text-slate-400 bg-slate-900/85 px-2 py-0.5 rounded border border-slate-700/60">
           {t.visualPreview}
         </div>

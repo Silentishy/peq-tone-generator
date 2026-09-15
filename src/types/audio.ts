@@ -10,6 +10,19 @@ export interface EQFix {
   enabled: boolean;
 }
 
+export type ToneMode = 'sine' | 'narrow_noise';
+
+export type BenchmarkTrackId = 'vocal' | 'bass' | 'pink_noise';
+
+export interface EQProfile {
+  id: string;
+  name: string;
+  nameZh?: string;
+  fixes: EQFix[];
+  preamp?: number;
+  autoPreamp?: boolean;
+}
+
 export interface FrequencyZone {
   name: string;
   nameZh?: string;

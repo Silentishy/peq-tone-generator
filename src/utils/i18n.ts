@@ -1,7 +1,7 @@
 export type Language = 'en' | 'zh';
 
 export interface Translations {
-  // Header
+  // Header & Controls
   appTitle: string;
   appSubtitle: string;
   playTone: string;
@@ -15,6 +15,10 @@ export interface Translations {
   exportFixes: string;
   github: string;
   helpTooltip: string;
+  shortcutsTooltip: string;
+  profileLabel: string;
+  headroomLabel: string;
+  headroomOk: string;
 
   // Scanner (Step 1)
   step1Title: string;
@@ -32,6 +36,15 @@ export interface Translations {
   catMids: string;
   catTreble: string;
   catAir: string;
+  toneModeSine: string;
+  toneModeNoise: string;
+  toneModeSineDesc: string;
+  toneModeNoiseDesc: string;
+  equalLoudnessToggle: string;
+  equalLoudnessOn: string;
+  equalLoudnessOff: string;
+  equalLoudnessTooltip: string;
+  pinnaGainNotice: string;
 
   // Fixer (Step 2)
   step2Title: string;
@@ -52,7 +65,7 @@ export interface Translations {
   liveFeedback: string;
   deleteFix: string;
 
-  // Music Audition
+  // Music Audition (Step 3)
   musicAuditionTitle: string;
   musicAuditionSubtitle: string;
   uploadMusicBtn: string;
@@ -68,14 +81,19 @@ export interface Translations {
   musicEqOn: string;
   musicBypass: string;
   noMusicLoaded: string;
+  benchmarkTracksTitle: string;
+  benchmarkTrackVocal: string;
+  benchmarkTrackBass: string;
+  benchmarkTrackPink: string;
 
-  // Visualizer (Step 3)
+  // Visualizer (Step 4)
   step3Title: string;
   step3Subtitle: string;
   visualPreview: string;
   flatReference: string;
+  dragHint: string;
 
-  // Fixes List (Step 4)
+  // Fixes List (Step 5)
   step4Title: string;
   clearAll: string;
   confirmClear: string;
@@ -85,11 +103,22 @@ export interface Translations {
   listenTooltip: string;
   deleteTooltip: string;
 
-  // Export Modal
+  // Profiles Manager
+  profileDefault: string;
+  profileIEM: string;
+  profileOverEar: string;
+  profileSpeakers: string;
+  addProfile: string;
+  renameProfile: string;
+  deleteProfile: string;
+  promptProfileName: string;
+
+  // Export & Import Modal
   exportModalTitle: string;
   tabWindows: string;
   tabAndroid: string;
   tabUniversal: string;
+  tabImport: string;
   apoTitle: string;
   apoDesc: string;
   waveletTitle: string;
@@ -99,6 +128,24 @@ export interface Translations {
   downloadFile: string;
   copyClipboard: string;
   copiedSuccess: string;
+  preampSetting: string;
+  autoPreampLabel: string;
+  importTitle: string;
+  importDesc: string;
+  importPlaceholder: string;
+  importBtn: string;
+  importSuccess: string;
+  importError: string;
+
+  // Keyboard Shortcuts Modal
+  shortcutsTitle: string;
+  shortcutSpaceDesc: string;
+  shortcutArrowsLRDesc: string;
+  shortcutArrowsShiftLRDesc: string;
+  shortcutArrowsUDSDesc: string;
+  shortcutBDesc: string;
+  shortcutSDesc: string;
+  shortcutCloseBtn: string;
 
   // Help Modal
   helpModalTitle: string;
@@ -119,9 +166,9 @@ export interface Translations {
 
 export const TRANSLATIONS: Record<Language, Translations> = {
   en: {
-    // Header
+    // Header & Controls
     appTitle: 'Headphone & Speaker EQ Fixer',
-    appSubtitle: 'Find harsh peaks or quiet dips, level the dB, and export to your EQ app.',
+    appSubtitle: 'Find harsh peaks or quiet dips, level the dB, and audition with your music.',
     playTone: 'PLAY TONE',
     stopTone: 'STOP TONE',
     volume: 'Volume',
@@ -129,13 +176,17 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     safeTooltip: 'Hardware ear safety limiter is active to protect against accidental loud volume',
     bypassOff: 'EQ Fixes ON',
     bypassOn: 'Original (Bypass)',
-    bypassTooltip: 'Toggle to compare with original sound without fixes',
-    exportFixes: 'Export Fixes',
+    bypassTooltip: 'Toggle to compare with original sound without fixes (Shortcut: B)',
+    exportFixes: 'Export & Import',
     github: 'GitHub',
     helpTooltip: 'How to use this app',
+    shortcutsTooltip: 'Keyboard Shortcuts (Space, Arrows, B, S)',
+    profileLabel: 'Device Profile:',
+    headroomLabel: 'Preamp:',
+    headroomOk: 'Safe Headroom',
 
     // Scanner
-    step1Title: 'Scan Frequencies & Listen',
+    step1Title: 'Step 1: Scan Frequencies & Listen',
     step1Subtitle: 'Drag slider or click any frequency card below',
     autoScanStart: 'AUTO-SCAN FREQUENCIES',
     autoScanPause: 'PAUSE SCAN (STOP HERE)',
@@ -150,9 +201,18 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     catMids: 'Mids (250-2k)',
     catTreble: 'Treble (2.5k-10k)',
     catAir: 'Air (>10k)',
+    toneModeSine: 'Pure Sine Wave',
+    toneModeNoise: 'Narrowband Noise',
+    toneModeSineDesc: 'Pure single frequency (Best for Headphones)',
+    toneModeNoiseDesc: 'Filtered noise burst (Best for Room Speakers - avoids standing waves)',
+    equalLoudnessToggle: 'ISO 226 Loudness Compensation',
+    equalLoudnessOn: 'Loudness Comp ON',
+    equalLoudnessOff: 'Loudness Comp OFF',
+    equalLoudnessTooltip: 'Fletcher-Munson Equal-Loudness Normalization: Normalizes human ear sensitivity so tone sweep feels subjectively even in loudness',
+    pinnaGainNotice: 'Note: Human ear canals naturally amplify 2.5k–4.5kHz by 6–10 dB. Only cut if it sounds screeching or noticeably louder than adjacent frequencies.',
 
     // Fixer
-    step2Title: 'Fix This Frequency',
+    step2Title: 'Step 2: Fix This Frequency',
     step2Subtitle: 'How does this frequency sound compared to the rest?',
     fixActive: 'Fix Active',
     tooLoudBtn: 'TOO LOUD (CUT PEAK)',
@@ -161,18 +221,18 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     gainLabel: 'Loudness Adjustment (dB):',
     quickPresets: 'Quick:',
     widthLabel: 'Filter Width:',
-    widthNarrowTitle: 'Narrow',
+    widthNarrowTitle: 'Narrow (Q: 4.5)',
     widthNarrowDesc: 'Target a sharp, ringing peak or notch',
-    widthNormalTitle: 'Normal',
+    widthNormalTitle: 'Normal (Q: 1.41)',
     widthNormalDesc: 'Standard balance for most peaks & dips',
-    widthWideTitle: 'Wide',
+    widthWideTitle: 'Wide (Q: 0.71)',
     widthWideDesc: 'Gentle warmth, brightness, or broad dip',
     liveFeedback: 'Live sound updated! Listen through your headphones.',
     deleteFix: 'Delete Fix',
 
     // Music Audition
-    musicAuditionTitle: 'Audition on Your Music (A/B Test)',
-    musicAuditionSubtitle: 'Upload a favorite song to hear how your EQ fixes improve real music',
+    musicAuditionTitle: 'Step 3: Audition on Music (A/B Test)',
+    musicAuditionSubtitle: 'Test with your own songs or built-in audio benchmarks',
     uploadMusicBtn: 'Upload Audio File',
     uploadMusicDesc: 'Supports MP3, WAV, FLAC, AAC, M4A, OGG',
     changeMusic: 'Change Song',
@@ -182,32 +242,48 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     rewind5s: '-5s',
     forward5s: '+5s',
     abCompareTitle: 'Instant A/B Compare:',
-    abCompareDesc: 'Toggle back and forth while your music plays to hear before & after',
+    abCompareDesc: 'Toggle back and forth while music plays to hear before & after',
     musicEqOn: 'EQ Applied (Clean & Smooth)',
     musicBypass: 'Original Audio (Uncorrected)',
-    noMusicLoaded: 'No music loaded yet. Upload your favorite song to compare how your EQ fixes sound on real tracks.',
+    noMusicLoaded: 'No music loaded yet. Select a built-in benchmark track or upload your favorite song.',
+    benchmarkTracksTitle: 'Built-in Test Tracks (No Upload Needed):',
+    benchmarkTrackVocal: '🎤 Vocal & Sibilance',
+    benchmarkTrackBass: '🥁 Bass & Kick Punch',
+    benchmarkTrackPink: '🌊 Full Pink Noise',
 
     // Visualizer
     step3Title: 'Live Frequency Response Curve',
-    step3Subtitle: 'Click anywhere on curve to jump',
+    step3Subtitle: 'Drag nodes directly on the graph or click to jump',
     visualPreview: 'Visual Preview • 20 Hz – 20 kHz',
     flatReference: '0 dB (Flat)',
+    dragHint: 'Drag nodes: horizontal = Freq, vertical = Gain. Scroll wheel = Width',
 
     // Fixes List
     step4Title: 'My EQ Fixes',
     clearAll: 'Clear All',
-    confirmClear: 'Clear all applied EQ fixes and start fresh?',
+    confirmClear: 'Clear all applied EQ fixes in this profile and start fresh?',
     noFixesYet: 'No fixes created yet! Use Step 1 to scan through frequencies. When a spot sounds noticeably piercing or quiet, stop and adjust it in Step 2.',
     peakCut: 'Peak Cut',
     dipBoost: 'Dip Boost',
     listenTooltip: 'Jump to frequency and listen',
     deleteTooltip: 'Delete this fix',
 
-    // Export Modal
-    exportModalTitle: 'Export Your EQ Fixes',
+    // Profiles Manager
+    profileDefault: 'Default Profile',
+    profileIEM: 'AirPods / In-Ear',
+    profileOverEar: 'Over-Ear Headphones',
+    profileSpeakers: 'Desktop Speakers',
+    addProfile: '+ New Device Profile',
+    renameProfile: 'Rename Profile',
+    deleteProfile: 'Delete Profile',
+    promptProfileName: 'Enter a name for this EQ profile (e.g., Sennheiser HD600, AirPods Pro):',
+
+    // Export & Import Modal
+    exportModalTitle: 'Export & Import EQ Configuration',
     tabWindows: 'Windows (Peace / APO)',
     tabAndroid: 'Android (Wavelet)',
     tabUniversal: 'Mac & Hardware Table',
+    tabImport: 'Reverse Import',
     apoTitle: 'Equalizer APO & Peace GUI (Windows)',
     apoDesc: 'Open Peace GUI or Equalizer APO. Paste these lines into your config file or type them into the Peace parametric sliders.',
     waveletTitle: 'Wavelet & Poweramp (Android)',
@@ -217,17 +293,35 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     downloadFile: 'Download File',
     copyClipboard: 'Copy to Clipboard',
     copiedSuccess: 'Copied to Clipboard!',
+    preampSetting: 'Digital Headroom / Preamp:',
+    autoPreampLabel: 'Auto Headroom Protection (Prevents Digital Clipping)',
+    importTitle: 'Import Existing EQ Configuration:',
+    importDesc: 'Paste Equalizer APO lines, Wavelet lines, or JSON format below to import into your current profile:',
+    importPlaceholder: 'e.g.\nPreamp: -3.5 dB\nFilter 1: ON PK Fc 120 Hz Gain 3.0 dB Q 1.41\nFilter 2: ON PK Fc 6200 Hz Gain -4.0 dB Q 4.5',
+    importBtn: 'Parse & Apply to Current Profile',
+    importSuccess: 'Successfully imported fixes into current profile!',
+    importError: 'Could not find valid filter lines. Please check format.',
+
+    // Keyboard Shortcuts Modal
+    shortcutsTitle: 'Keyboard Shortcuts Cheat Sheet',
+    shortcutSpaceDesc: 'Play / Pause pure tone or music audition',
+    shortcutArrowsLRDesc: 'Nudge frequency down / up (±10 Hz)',
+    shortcutArrowsShiftLRDesc: 'Jump frequency down / up (±100 Hz)',
+    shortcutArrowsUDSDesc: 'Adjust gain for active frequency (±0.5 dB)',
+    shortcutBDesc: 'Instant A/B Compare (Toggle EQ / Bypass)',
+    shortcutSDesc: 'Toggle Auto-Scan frequency walker',
+    shortcutCloseBtn: 'Close',
 
     // Help Modal
     helpModalTitle: 'How to Fix Headphone & Speaker Sound',
-    helpStep1Title: 'Put On Your Headphones & Hit "Play Tone"',
+    helpStep1Title: '1. Put On Your Headphones & Hit "Play Tone"',
     helpStep1Desc: 'Ensure volume is at a moderate, comfortable level. You\'ll hear a smooth, continuous pure tone.',
-    helpStep2Title: 'Scan Frequencies to Find Peaks or Dips',
+    helpStep2Title: '2. Scan Frequencies to Find Peaks or Dips',
     helpStep2Desc: 'Slowly drag the slider from 20 Hz to 20,000 Hz, or click Auto-Scan. Listen carefully: does any frequency suddenly sound shriekingly loud (a harsh treble peak) or barely audible (a recessed dip)?',
-    helpStep3Title: 'Adjust dB On The Spot',
+    helpStep3Title: '3. Adjust dB On The Spot',
     helpStep3Desc: 'Hit pause at that frequency! Click "Too Loud (Cut Peak)" and adjust the dB slider down until that pitch sounds equal in volume to the frequencies around it.',
-    helpStep4Title: 'Compare & Export',
-    helpStep4Desc: 'Use the A/B Compare button to hear the difference between your fixes and original sound. When happy, click Export Fixes and paste into Equalizer APO, Peace, or Wavelet!',
+    helpStep4Title: '4. Compare with Music & Export',
+    helpStep4Desc: 'Upload a song or play a built-in benchmark track. Toggle A/B Compare to hear the difference on real music. When happy, export into Equalizer APO, Peace, or Wavelet!',
     helpCloseBtn: 'Got It, Let\'s Start Listening!',
 
     // Footer
@@ -236,9 +330,9 @@ export const TRANSLATIONS: Record<Language, Translations> = {
   },
 
   zh: {
-    // Header
+    // Header & Controls
     appTitle: '耳机 / 音箱 EQ 频响调音器',
-    appSubtitle: '轻松找出刺耳尖峰或下陷凹坑，实时调整分贝，一键导出到各大均衡器。',
+    appSubtitle: '轻松找出刺耳尖峰或下陷凹坑，实时调整分贝，并用真实音乐即时试听。',
     playTone: '播放纯音',
     stopTone: '停止播放',
     volume: '音量',
@@ -246,10 +340,14 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     safeTooltip: '硬件级安全限幅器已启用，防止过大音量保护听力',
     bypassOff: 'EQ 修正开启',
     bypassOn: '原始声音 (直通对比)',
-    bypassTooltip: '点击切换原声与调音效果进行 A/B 对比',
-    exportFixes: '导出调音设置',
+    bypassTooltip: '点击切换原声与调音效果进行 A/B 对比 (快捷键: B)',
+    exportFixes: '导出 / 导入配置',
     github: 'GitHub',
     helpTooltip: '使用指南与教程',
+    shortcutsTooltip: '键盘快捷键 (空格, 方向键, B, S)',
+    profileLabel: '当前设备配置：',
+    headroomLabel: '前级增益：',
+    headroomOk: '数字动态安全',
 
     // Scanner
     step1Title: '步骤 1：扫描频段并仔细聆听',
@@ -267,6 +365,15 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     catMids: '中频 (250-2k)',
     catTreble: '高频 (2.5k-10k)',
     catAir: '极高频 (>10k)',
+    toneModeSine: '正弦纯音波',
+    toneModeNoise: '窄带粉红噪声',
+    toneModeSineDesc: '纯正单频正弦波 (最适合耳机 / 耳塞)',
+    toneModeNoiseDesc: '窄带滤波噪声 (最适合音箱桌面测试，避免房间驻波突兀啸叫)',
+    equalLoudnessToggle: 'ISO 226 等响度听觉补偿',
+    equalLoudnessOn: '等响度补偿：开启',
+    equalLoudnessOff: '等响度补偿：关闭',
+    equalLoudnessTooltip: '等响度曲线补偿：人耳对 3-4kHz 极敏感，对低频和极高频迟钝。开启后动态加权纯音响度，让扫频听感平直，真实硬件峰值更易暴露',
+    pinnaGainNotice: '提示：人耳耳道天生会对 2.5k–4.5kHz 放大 6–10 dB (耳廓增益)。只有该处明显炸耳、比临近频段突兀刺痛时才需削减。',
 
     // Fixer
     step2Title: '步骤 2：针对当前频点进行微调',
@@ -288,11 +395,11 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     deleteFix: '删除此项修正',
 
     // Music Audition
-    musicAuditionTitle: '音乐试听与 A/B 盲听对比',
-    musicAuditionSubtitle: '上传您常听的歌曲，试听 EQ 修正对真实音乐的音质改善效果',
-    uploadMusicBtn: '上传音频文件',
+    musicAuditionTitle: '步骤 3：音乐试听与 A/B 盲听对比',
+    musicAuditionSubtitle: '使用内置基准测试曲目或上传您常听的歌曲，验证 EQ 改善效果',
+    uploadMusicBtn: '上传本地音频',
     uploadMusicDesc: '支持 MP3, WAV, FLAC, AAC, M4A, OGG 等格式',
-    changeMusic: '更换歌曲',
+    changeMusic: '更换本地歌曲',
     playMusic: '播放音乐',
     pauseMusic: '暂停播放',
     loopTooltip: '单曲循环',
@@ -302,29 +409,45 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     abCompareDesc: '播放音乐时反复点击切换，直观感受调音前后的音质对比',
     musicEqOn: 'EQ 修正已生效 (声音更平滑自然)',
     musicBypass: '原始音频 (未修正直通原声)',
-    noMusicLoaded: '尚未加载歌曲。请点击上方按钮从电脑中选择您熟悉的试音曲目。',
+    noMusicLoaded: '尚未加载歌曲。请直接点击下方内置基准测试曲，或上传本地音乐。',
+    benchmarkTracksTitle: '免上传！内置高保真试音片段：',
+    benchmarkTrackVocal: '🎤 人声咬字与齿音测试',
+    benchmarkTrackBass: '🥁 极低频与底鼓打击感',
+    benchmarkTrackPink: '🌊 全频段校准粉红噪声',
 
     // Visualizer
-    step3Title: '步骤 3：实时频响修正曲线',
-    step3Subtitle: '点击曲线上任意位置即可跳转试听',
+    step3Title: '实时频响修正曲线',
+    step3Subtitle: '可直接在曲线上拖动节点微调，或点击空白处跳转试听',
     visualPreview: '可视化频响 • 20 Hz – 20 kHz',
     flatReference: '0 dB (基准参考线)',
+    dragHint: '直接拖拽节点：水平调节频率，垂直调节增益。滚轮调节宽度 (Q值)',
 
     // Fixes List
-    step4Title: '步骤 4：已应用的 EQ 修正清单',
-    clearAll: '清空全部',
-    confirmClear: '确定要清空所有已应用的调音修正吗？',
-    noFixesYet: '尚未添加任何修正。请在步骤 1 中扫描频段，如果发现刺耳或凹陷频点，暂停并在步骤 2 中进行调节。',
+    step4Title: '已应用的 EQ 修正清单',
+    clearAll: '清空当前配置',
+    confirmClear: '确定要清空当前设备配置下的所有已应用的调音修正吗？',
+    noFixesYet: '当前配置尚未添加任何修正。请在步骤 1 中扫描频段，如果发现刺耳或凹陷频点，暂停并在步骤 2 中进行调节。',
     peakCut: '削减尖峰',
     dipBoost: '提升凹陷',
     listenTooltip: '跳转至此频点并试听',
     deleteTooltip: '删除该项修正',
 
-    // Export Modal
-    exportModalTitle: '导出您的 Parametric EQ 调音配置',
+    // Profiles Manager
+    profileDefault: '默认配置',
+    profileIEM: '入耳式耳机 / AirPods',
+    profileOverEar: '头戴式大耳机',
+    profileSpeakers: '桌面音箱',
+    addProfile: '+ 新建设备配置',
+    renameProfile: '重命名当前配置',
+    deleteProfile: '删除当前配置',
+    promptProfileName: '请输入新设备配置名称 (例如：森海 HD600、AirPods Pro、桌面音箱)：',
+
+    // Export & Import Modal
+    exportModalTitle: '导出与反向导入 EQ 调音配置',
     tabWindows: 'Windows (Peace / APO)',
     tabAndroid: 'Android (Wavelet / Poweramp)',
     tabUniversal: 'Mac / 硬件参数表格',
+    tabImport: '反向导入配置',
     apoTitle: 'Equalizer APO & Peace GUI (Windows 平台)',
     apoDesc: '打开 Peace GUI 或 Equalizer APO，将下方配置复制粘贴到 config.txt 或导入到 Peace 参数均衡器中。',
     waveletTitle: 'Wavelet & Poweramp 均衡器 (安卓平台)',
@@ -334,6 +457,24 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     downloadFile: '下载配置文件',
     copyClipboard: '复制到剪贴板',
     copiedSuccess: '已成功复制到剪贴板！',
+    preampSetting: '数字动态余量 / 前级负增益 (Preamp)：',
+    autoPreampLabel: '自动防削波动态余量保护 (当有频点提升时，自动设置负 Preamp 防止爆音破音)',
+    importTitle: '反向导入已有 EQ 配置文件：',
+    importDesc: '可直接粘贴 Equalizer APO 代码行、Wavelet 代码行或 JSON 格式，导入覆盖或追加到当前设备配置中：',
+    importPlaceholder: '例如：\nPreamp: -3.5 dB\nFilter 1: ON PK Fc 120 Hz Gain 3.0 dB Q 1.41\nFilter 2: ON PK Fc 6200 Hz Gain -4.0 dB Q 4.5',
+    importBtn: '解析并应用到当前设备配置',
+    importSuccess: '成功解析并导入 EQ 配置！',
+    importError: '未能在粘贴文本中找到有效的 Filter 参数行，请检查格式。',
+
+    // Keyboard Shortcuts Modal
+    shortcutsTitle: '调音键盘快捷键秘籍 (闭眼盲听必备)',
+    shortcutSpaceDesc: '播放 / 暂停纯音扫频或音乐试听',
+    shortcutArrowsLRDesc: '左 / 右方向键微调频率 (±10 Hz)',
+    shortcutArrowsShiftLRDesc: 'Shift + 左 / 右方向键快速跳转频率 (±100 Hz)',
+    shortcutArrowsUDSDesc: '上 / 下方向键调节当前频点的增益分贝 (±0.5 dB)',
+    shortcutBDesc: '一键 A/B 对比切换 (切换 EQ 修正 / 原声直通)',
+    shortcutSDesc: '开启 / 暂停自动频段扫描',
+    shortcutCloseBtn: '我知道了',
 
     // Help Modal
     helpModalTitle: '耳机与音箱 EQ 调音入门指南',
@@ -343,8 +484,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     helpStep2Desc: '缓慢拖动滑块从 20 Hz 扫向 20,000 Hz，或直接开启“自动扫频”。请仔细感受：是否有某个频段突然异常刺耳啸叫（高频毛刺峰），或是突然沉寂听不清（频响下陷）？',
     helpStep3Title: '3. 发现异常频点，当场调整分贝',
     helpStep3Desc: '在刺耳处暂停，点击“太响/刺耳”，向下拉动 dB 滑块，直至这个音高的响度与周围频段听起来一样平滑均衡。',
-    helpStep4Title: '4. 对比效果并一键导出',
-    helpStep4Desc: '点击顶部的“原始声音(直通)”按钮，快速对比调音前后的音质差别。满意后点击“导出调音设置”，即可应用到各类专业 EQ 软件中！',
+    helpStep4Title: '4. 用真实音乐验证并一键导出',
+    helpStep4Desc: '点击步骤 3 的试音曲目或上传您自己的歌曲，边听边按“A/B对比”感受音质提升。满意后点击“导出”，即可应用到各类专业 EQ 软件中！',
     helpCloseBtn: '了解，开始调音！',
 
     // Footer

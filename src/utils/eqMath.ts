@@ -188,6 +188,65 @@ export function getFrequencyZone(freq: number): FrequencyZone {
 }
 
 /**
+ * Calculate Equal-Loudness (ISO 226 / Fletcher-Munson) compensation in dB.
+ * Human hearing is less sensitive to low frequencies (<100Hz) and high air (>12kHz),
+ * and naturally hypersensitive at 2.5kHz - 4.5kHz (ear canal pinna resonance).
+ * Applying this inverted curve normalizes perceived loudness across the sweep.
+ */
+export function calculateEqualLoudnessGain(freq: number): number {
+  if (freq <= 0) return 0;
+  const f = Math.max(MIN_FREQ, Math.min(MAX_FREQ, freq));
+
+  // Piecewise interpolation approximating the 65-phon equal-loudness contour offset relative to 1 kHz
+  const landmarks = [
+    { f: 20, db: 14.0 },
+    { f: 31.5, db: 12.0 },
+    { f: 63, db: 8.5 },
+    { f: 125, db: 5.0 },
+    { f: 250, db: 2.2 },
+    { f: 500, db: 0.8 },
+    { f: 1000, db: 0.0 }, // reference 0 dB
+    { f: 2000, db: -1.5 },
+    { f: 3000, db: -4.0 }, // pinna peak sensitivity
+    { f: 4000, db: -4.5 },
+    { f: 6000, db: -1.0 },
+    { f: 8000, db: 1.5 },
+    { f: 10000, db: 3.5 },
+    { f: 12500, db: 6.0 },
+    { f: 16000, db: 9.0 },
+    { f: 20000, db: 12.0 },
+  ];
+
+  for (let i = 0; i < landmarks.length - 1; i++) {
+    const p1 = landmarks[i];
+    const p2 = landmarks[i + 1];
+    if (f >= p1.f && f <= p2.f) {
+      const logF1 = Math.log10(p1.f);
+      const logF2 = Math.log10(p2.f);
+      const logF = Math.log10(f);
+      const ratio = (logF - logF1) / (logF2 - logF1);
+      const compDb = p1.db + ratio * (p2.db - p1.db);
+      return Math.max(-6, Math.min(14, compDb));
+    }
+  }
+
+  return 0;
+}
+
+/**
+ * Calculate Headroom and recommended digital Preamp to prevent 0 dBFS clipping
+ */
+export function calculateHeadroom(fixes: EQFix[]): { maxBoost: number; suggestedPreamp: number } {
+  const activeBoosts = fixes.filter((f) => f.enabled && f.gain > 0).map((f) => f.gain);
+  if (activeBoosts.length === 0) {
+    return { maxBoost: 0, suggestedPreamp: 0 };
+  }
+  const maxBoost = Math.max(...activeBoosts);
+  const suggestedPreamp = -Math.round(maxBoost * 10) / 10;
+  return { maxBoost, suggestedPreamp };
+}
+
+/**
  * Coordinate helpers for log canvas
  */
 export function freqToX(freq: number, width: number): number {
@@ -212,16 +271,23 @@ export function gainToY(gain: number, height: number, minGain = -15, maxGain = 1
   return height - ratio * height;
 }
 
+export function yToGain(y: number, height: number, minGain = -15, maxGain = 15): number {
+  const clampedY = Math.max(0, Math.min(height, y));
+  const ratio = 1 - clampedY / height;
+  return minGain + ratio * (maxGain - minGain);
+}
+
 /**
  * Export formats
  */
-export function exportToEqualizerAPO(fixes: EQFix[]): string {
+export function exportToEqualizerAPO(fixes: EQFix[], preamp = 0): string {
   if (fixes.length === 0) return '# No EQ fixes applied yet.';
 
+  const preampStr = `${preamp >= 0 ? '+' : ''}${preamp.toFixed(1)} dB`;
   const lines = [
     '# Parametric EQ Settings - Headphone/Speaker Fixer',
     '# Paste these lines into your Equalizer APO config.txt or Peace GUI',
-    'Preamp: 0 dB',
+    `Preamp: ${preampStr}`,
   ];
 
   fixes.forEach((fix, index) => {
@@ -234,12 +300,12 @@ export function exportToEqualizerAPO(fixes: EQFix[]): string {
   return lines.join('\n');
 }
 
-export function exportToWavelet(fixes: EQFix[]): string {
+export function exportToWavelet(fixes: EQFix[], preamp = 0): string {
   if (fixes.length === 0) return '# No EQ fixes applied.';
 
-  // Standard AutoEq format used by Wavelet & Poweramp
   const lines = [
     '# Wavelet / Poweramp Parametric EQ Configuration',
+    `# Recommended Preamp: ${preamp >= 0 ? '+' : ''}${preamp.toFixed(1)} dB`,
   ];
 
   fixes.forEach((fix) => {
@@ -250,17 +316,81 @@ export function exportToWavelet(fixes: EQFix[]): string {
   return lines.join('\n');
 }
 
-export function exportToTable(fixes: EQFix[]): string {
+export function exportToTable(fixes: EQFix[], preamp = 0): string {
   if (fixes.length === 0) return 'No fixes created yet.';
 
-  let out = 'Frequency (Hz) | Gain (dB) | Q Factor | Type\n';
-  out += '---------------|-----------|----------|------\n';
+  let out = `Preamp Offset: ${preamp >= 0 ? '+' : ''}${preamp.toFixed(1)} dB\n\n`;
+  out += 'Frequency (Hz) | Gain (dB) | Q Factor | Width\n';
+  out += '---------------|-----------|----------|--------\n';
   fixes.forEach((fix) => {
     const fStr = `${Math.round(fix.frequency)} Hz`.padEnd(14, ' ');
     const gStr = `${fix.gain >= 0 ? '+' : ''}${fix.gain.toFixed(1)} dB`.padEnd(9, ' ');
-    const qStr = `${fix.q.toFixed(2)} (${fix.width})`.padEnd(8, ' ');
-    out += `${fStr} | ${gStr} | ${qStr} | Peaking\n`;
+    const qStr = `${fix.q.toFixed(2)}`.padEnd(8, ' ');
+    const wStr = fix.width.padEnd(6, ' ');
+    out += `${fStr} | ${gStr} | ${qStr} | ${wStr}\n`;
   });
 
   return out;
+}
+
+/**
+ * Reverse Import Parser
+ * Parses Equalizer APO / Peace lines, Wavelet lines, or JSON format back into EQFix items
+ */
+export function importFromEqualizerAPO(text: string): { fixes: Partial<EQFix>[]; preamp?: number } {
+  const fixes: Partial<EQFix>[] = [];
+  let parsedPreamp: number | undefined = undefined;
+
+  const trimmed = text.trim();
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+    try {
+      const json = JSON.parse(trimmed);
+      if (Array.isArray(json)) {
+        return { fixes: json };
+      } else if (json && Array.isArray(json.fixes)) {
+        return { fixes: json.fixes, preamp: json.preamp };
+      }
+    } catch {}
+  }
+
+  const lines = text.split('\n');
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    // Check Preamp: -4.5 dB
+    const preampMatch = line.match(/^Preamp:\s*([+-]?[\d.]+)\s*dB/i);
+    if (preampMatch) {
+      parsedPreamp = parseFloat(preampMatch[1]);
+      continue;
+    }
+
+    if (line.startsWith('#')) continue;
+
+    // e.g. "Filter 1: ON PK Fc 6200 Hz Gain -4.0 dB Q 4.5"
+    // or "Filter: PK Fc 6200 Gain -4.0 Q 4.5"
+    const apoMatch = line.match(/(?:Filter\s*\d*:?\s*)?(ON|OFF)?\s*([A-Za-z]+)\s+Fc\s+([\d.]+)\s*(?:Hz)?\s+Gain\s+([+-]?[\d.]+)\s*(?:dB)?\s+Q\s+([\d.]+)/i);
+    if (apoMatch) {
+      const enabled = apoMatch[1] ? apoMatch[1].toUpperCase() === 'ON' : true;
+      const freq = parseFloat(apoMatch[3]);
+      const gain = parseFloat(apoMatch[4]);
+      const q = parseFloat(apoMatch[5]);
+
+      let width: FilterWidth = 'normal';
+      if (q >= 3.0) width = 'narrow';
+      else if (q <= 0.9) width = 'wide';
+
+      if (!isNaN(freq) && !isNaN(gain)) {
+        fixes.push({
+          frequency: Math.max(MIN_FREQ, Math.min(MAX_FREQ, Math.round(freq))),
+          gain: Math.max(MIN_GAIN, Math.min(MAX_GAIN, Math.round(gain * 10) / 10)),
+          q: !isNaN(q) ? Math.max(0.1, Math.min(20, q)) : WIDTH_MAP[width].q,
+          width,
+          enabled,
+        });
+      }
+    }
+  }
+
+  return { fixes, preamp: parsedPreamp };
 }

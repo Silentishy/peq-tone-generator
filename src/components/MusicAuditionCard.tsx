@@ -5,20 +5,19 @@ import {
   Play,
   Pause,
   Repeat,
-  RotateCcw,
-  RotateCw,
   FolderOpen,
-  Volume2,
-  CheckCircle2,
-  Sparkles,
   Sliders,
+  Sparkles,
+  Zap,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { MusicState } from '../audio/AudioEngine';
+import { BenchmarkTrackId } from '../types/audio';
 
 interface MusicAuditionCardProps {
   musicState: MusicState;
   onUploadFile: (file: File) => void;
+  onSelectBenchmarkTrack: (trackId: BenchmarkTrackId) => void;
   onTogglePlay: () => void;
   onSeek: (seconds: number) => void;
   onToggleLoop: () => void;
@@ -37,6 +36,7 @@ function formatTime(sec: number): string {
 export const MusicAuditionCard: React.FC<MusicAuditionCardProps> = ({
   musicState,
   onUploadFile,
+  onSelectBenchmarkTrack,
   onTogglePlay,
   onSeek,
   onToggleLoop,
@@ -71,10 +71,28 @@ export const MusicAuditionCard: React.FC<MusicAuditionCardProps> = ({
     onSeek(musicState.currentTime + delta);
   };
 
+  const benchmarkButtons: { id: BenchmarkTrackId; label: string; desc: string }[] = [
+    {
+      id: 'vocal',
+      label: t.benchmarkTrackVocal,
+      desc: lang === 'zh' ? '测试刺耳高频、中频齿音与人声结像' : 'Test sibilance, harsh cymbals & vocals',
+    },
+    {
+      id: 'bass',
+      label: t.benchmarkTrackBass,
+      desc: lang === 'zh' ? '测试 808 下潜、底鼓打击感与中低频浑浊' : 'Test sub-bass rumble, punch & muddiness',
+    },
+    {
+      id: 'pink_noise',
+      label: t.benchmarkTrackPink,
+      desc: lang === 'zh' ? '标准 1/f 声学平直粉红噪声校准' : 'Standard 1/f acoustic pinking calibration',
+    },
+  ];
+
   return (
     <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
           <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center border border-cyan-500/40">
             3
@@ -95,17 +113,50 @@ export const MusicAuditionCard: React.FC<MusicAuditionCardProps> = ({
 
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-studio-surface hover:bg-slate-700 text-xs font-semibold text-cyan-300 border border-studio-border transition active:scale-95 shadow-sm"
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-studio-surface hover:bg-slate-700 text-xs font-semibold text-cyan-300 border border-studio-border transition active:scale-95 shadow-sm"
           title={t.uploadMusicDesc}
         >
           <Upload className="w-3.5 h-3.5" />
-          <span>{musicState.isLoaded ? t.changeMusic : t.uploadMusicBtn}</span>
+          <span>{musicState.isLoaded && !musicState.isBenchmark ? t.changeMusic : t.uploadMusicBtn}</span>
         </button>
       </div>
 
       <p className="text-xs text-slate-400">
         {t.musicAuditionSubtitle}
       </p>
+
+      {/* Built-in Benchmark Test Clips Section (No Upload Needed!) */}
+      <div className="bg-studio-surface/80 border border-studio-border/70 rounded-xl p-3 flex flex-col gap-2">
+        <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5 font-semibold">
+          <Zap className="w-3.5 h-3.5 text-amber-400" />
+          {t.benchmarkTracksTitle}
+        </span>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {benchmarkButtons.map((bm) => {
+            const isSelected = musicState.isBenchmark && musicState.fileName.toLowerCase().includes(bm.id);
+            return (
+              <button
+                key={bm.id}
+                onClick={() => onSelectBenchmarkTrack(bm.id)}
+                className={`p-2 rounded-xl border text-left transition flex flex-col justify-between active:scale-95 ${
+                  isSelected
+                    ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-sm ring-1 ring-cyan-400/40'
+                    : 'bg-studio-panel border-studio-border text-slate-300 hover:border-slate-600'
+                }`}
+                title={bm.desc}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-xs font-bold">{bm.label}</span>
+                  {isSelected && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />}
+                </div>
+                <span className="text-[10px] text-slate-400 truncate w-full mt-1">
+                  {bm.desc}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Main Music Player Box */}
       {!musicState.isLoaded ? (
@@ -121,7 +172,7 @@ export const MusicAuditionCard: React.FC<MusicAuditionCardProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-200">
-              {lang === 'zh' ? '点击或拖拽音频文件到此处' : 'Click or Drag & Drop audio file here'}
+              {lang === 'zh' ? '点击选择或拖拽本地歌曲至此处' : 'Or click / drag & drop local songs here'}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
               {t.uploadMusicDesc}

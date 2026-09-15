@@ -7,6 +7,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Compass,
+  Volume2,
+  Waves,
+  Sparkles,
+  Info,
 } from 'lucide-react';
 import {
   getFrequencyZone,
@@ -15,6 +19,7 @@ import {
   MIN_FREQ,
   MAX_FREQ,
 } from '../utils/eqMath';
+import { ToneMode } from '../types/audio';
 import { useLanguage } from '../context/LanguageContext';
 
 interface FrequencyScannerProps {
@@ -24,6 +29,10 @@ interface FrequencyScannerProps {
   onToggleAutoScan: (speed?: 'slow' | 'normal' | 'fast') => void;
   isAudioRunning: boolean;
   onStartAudio: () => void;
+  toneMode: ToneMode;
+  onSelectToneMode: (mode: ToneMode) => void;
+  isEqualLoudness: boolean;
+  onToggleEqualLoudness: () => void;
 }
 
 type CategoryFilter = 'all' | 'bass' | 'mids' | 'treble' | 'air';
@@ -35,6 +44,10 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
   onToggleAutoScan,
   isAudioRunning,
   onStartAudio,
+  toneMode,
+  onSelectToneMode,
+  isEqualLoudness,
+  onToggleEqualLoudness,
 }) => {
   const { t, lang } = useLanguage();
   const currentZone = getFrequencyZone(frequency);
@@ -90,10 +103,12 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
   const zoneDesc = lang === 'zh' && currentZone.descriptionZh ? currentZone.descriptionZh : currentZone.description;
   const zoneProb = lang === 'zh' && currentZone.commonProblemsZh ? currentZone.commonProblemsZh : currentZone.commonProblems;
 
+  const isPinnaRegion = frequency >= 2500 && frequency <= 4500;
+
   return (
     <div className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-4">
-      {/* Step Indicator & Title */}
-      <div className="flex items-center justify-between">
+      {/* Step Indicator & Controls Header */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
           <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center border border-cyan-500/40">
             1
@@ -104,9 +119,50 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
           </h2>
         </div>
 
-        <span className="text-xs text-slate-400 font-medium hidden sm:inline-block">
-          {t.step1Subtitle}
-        </span>
+        {/* Generator Controls: Sine vs Narrowband Noise & Equal-Loudness Toggle */}
+        <div className="flex items-center flex-wrap gap-2">
+          {/* Tone Mode: Sine vs Noise */}
+          <div className="flex bg-studio-surface rounded-xl border border-studio-border p-0.5 text-xs font-medium">
+            <button
+              onClick={() => onSelectToneMode('sine')}
+              className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
+                toneMode === 'sine'
+                  ? 'bg-cyan-500/20 text-cyan-300 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title={t.toneModeSineDesc}
+            >
+              <Waves className="w-3.5 h-3.5" />
+              <span>{t.toneModeSine}</span>
+            </button>
+            <button
+              onClick={() => onSelectToneMode('narrow_noise')}
+              className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
+                toneMode === 'narrow_noise'
+                  ? 'bg-cyan-500/20 text-cyan-300 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title={t.toneModeNoiseDesc}
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+              <span>{t.toneModeNoise}</span>
+            </button>
+          </div>
+
+          {/* Equal-Loudness (ISO 226) Normalization Toggle */}
+          <button
+            onClick={onToggleEqualLoudness}
+            className={`px-2.5 py-1 rounded-xl border text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 ${
+              isEqualLoudness
+                ? 'bg-indigo-500/20 border-indigo-400 text-indigo-300 shadow-sm'
+                : 'bg-studio-surface border-studio-border text-slate-400 hover:text-slate-200'
+            }`}
+            title={t.equalLoudnessTooltip}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span>{isEqualLoudness ? t.equalLoudnessOn : t.equalLoudnessOff}</span>
+          </button>
+        </div>
       </div>
 
       {/* Massive Frequency Readout & Zone Card */}
@@ -141,6 +197,14 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Educational Pinna Gain Callout when in 2.5k - 4.5k region */}
+      {isPinnaRegion && (
+        <div className="flex items-center space-x-2 bg-indigo-950/30 border border-indigo-500/30 rounded-xl px-3 py-2 text-xs text-indigo-300/90 leading-tight">
+          <Info className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+          <span>{t.pinnaGainNotice}</span>
+        </div>
+      )}
 
       {/* Smooth Logarithmic Frequency Slider */}
       <div className="flex flex-col gap-1.5">
