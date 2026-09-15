@@ -15,7 +15,7 @@ import {
   ChevronDown,
   Sparkles,
 } from 'lucide-react';
-import { EQFix } from '../types/audio';
+import { EQFix, FilterType } from '../types/audio';
 import {
   exportToEqualizerAPO,
   exportToWavelet,
@@ -57,7 +57,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [parsedSummary, setParsedSummary] = useState<{
     count: number;
     preamp?: number;
-    preview: { freq: number; gain: number }[];
+    preview: { freq: number; gain: number; filterType?: FilterType }[];
   } | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<boolean>(false);
@@ -124,7 +124,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       preview: parsedFixes
         .filter((f) => f.frequency && f.gain !== undefined)
         .slice(0, 8)
-        .map((f) => ({ freq: f.frequency!, gain: f.gain! })),
+        .map((f) => ({ freq: f.frequency!, gain: f.gain!, filterType: f.filterType })),
     });
   };
 
@@ -367,17 +367,37 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
                   {/* Filter preview tags */}
                   <div className="flex flex-wrap gap-1.5 mt-1">
-                    {parsedSummary.preview.map((f, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-0.5 rounded bg-studio-surface text-[10px] font-mono text-slate-300 border border-studio-border"
-                      >
-                        {f.freq >= 1000 ? `${(f.freq / 1000).toFixed(1)}k` : `${f.freq}`}Hz{' '}
-                        <strong className={f.gain >= 0 ? 'text-sky-400' : 'text-rose-400'}>
-                          {f.gain >= 0 ? `+${f.gain}` : f.gain}dB
-                        </strong>
-                      </span>
-                    ))}
+                    {parsedSummary.preview.map((f, i) => {
+                      const isShelf = f.filterType === 'lowshelf';
+                      return (
+                        <span
+                          key={i}
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono border flex items-center gap-1 ${
+                            isShelf
+                              ? 'bg-amber-950/30 text-amber-300 border-amber-500/40'
+                              : 'bg-studio-surface text-slate-300 border-studio-border'
+                          }`}
+                        >
+                          <span>{f.freq >= 1000 ? `${(f.freq / 1000).toFixed(1)}k` : `${f.freq}`}Hz</span>
+                          <strong
+                            className={
+                              isShelf
+                                ? 'text-amber-400'
+                                : f.gain >= 0
+                                ? 'text-sky-400'
+                                : 'text-rose-400'
+                            }
+                          >
+                            {f.gain >= 0 ? `+${f.gain}` : f.gain}dB
+                          </strong>
+                          {isShelf && (
+                            <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-sans">
+                              {lang === 'zh' ? '低音搁架' : 'Shelf'}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
                     {parsedSummary.count > 8 && (
                       <span className="text-[10px] text-slate-400 font-mono py-0.5">
                         +{parsedSummary.count - 8} more

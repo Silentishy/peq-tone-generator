@@ -284,15 +284,20 @@ export const App: React.FC = () => {
   };
 
   const handleImportFixes = (imported: Partial<EQFix>[], parsedPreamp?: number) => {
-    const newFixes: EQFix[] = imported.map((item, idx) => ({
-      id: `fix-import-${Date.now()}-${idx}`,
-      frequency: item.frequency || 1000,
-      gain: item.gain ?? 0,
-      width: item.width || 'normal',
-      q: item.q || 1.41,
-      enabled: item.enabled ?? true,
-      label: item.label,
-    }));
+    const newFixes: EQFix[] = imported.map((item, idx) => {
+      const filterType = item.filterType || 'peaking';
+      const defaultQ = filterType === 'lowshelf' ? 0.71 : 1.41;
+      return {
+        id: `fix-import-${Date.now()}-${idx}`,
+        frequency: item.frequency || 1000,
+        gain: item.gain ?? 0,
+        width: item.width || 'normal',
+        q: item.q || defaultQ,
+        filterType,
+        enabled: item.enabled ?? true,
+        label: item.label || (filterType === 'lowshelf' ? 'Bass Shelf' : undefined),
+      };
+    });
 
     setProfiles((prev) =>
       prev.map((p) => {

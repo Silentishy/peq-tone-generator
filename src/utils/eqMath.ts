@@ -1,4 +1,4 @@
-import { EQFix, FilterWidth, FrequencyZone, FrequencyLandmark } from '../types/audio';
+import { EQFix, FilterType, FilterWidth, FrequencyZone, FrequencyLandmark } from '../types/audio';
 
 export const MIN_FREQ = 20;
 export const MAX_FREQ = 20000;
@@ -439,7 +439,7 @@ export function exportToTable(fixes: EQFix[], preamp = 0): string {
 
 /**
  * Reverse Import Parser
- * Parses Equalizer APO / Peace lines, Wavelet lines, or JSON format back into EQFix items
+ * Parses Equalizer APO / Peace lines, Wavelet lines, Universal Table, or JSON format back into EQFix items
  */
 export function importFromEqualizerAPO(text: string): { fixes: Partial<EQFix>[]; preamp?: number } {
   const fixes: Partial<EQFix>[] = [];
@@ -462,40 +462,88 @@ export function importFromEqualizerAPO(text: string): { fixes: Partial<EQFix>[];
     const line = rawLine.trim();
     if (!line) continue;
 
-    // Check Preamp: -4.5 dB
-    const preampMatch = line.match(/^Preamp:\s*([+-]?[\d.]+)\s*dB/i);
+    // Check Preamp: -4.5 dB or Preamp Offset: -4.5 dB
+    const preampMatch = line.match(/^Preamp(?:\s*Offset)?:\s*([+-]?[\d.]+)\s*dB/i);
     if (preampMatch) {
       parsedPreamp = parseFloat(preampMatch[1]);
       continue;
     }
 
-    if (line.startsWith('#')) continue;
+    if (line.startsWith('#') || line.startsWith('//') || line.startsWith('---')) continue;
+    if (line.toLowerCase().startsWith('frequency') && line.includes('|')) continue;
+
+    // Support Universal Table format: "105 Hz | +4.5 dB | 0.71 | Low Shelf | normal"
+    if (line.includes('|')) {
+      const parts = line.split('|').map((s) => s.trim());
+      if (parts.length >= 3) {
+        const freqMatch = parts[0].match(/([\d.]+)/);
+        const gainMatch = parts[1].match(/([+-]?[\d.]+)/);
+        const qMatch = parts[2].match(/([\d.]+)/);
+        const shapeStr = (parts[3] || '').toUpperCase();
+
+        if (freqMatch && gainMatch) {
+          const freq = parseFloat(freqMatch[1]);
+          const gain = parseFloat(gainMatch[1]);
+          const qVal = qMatch ? parseFloat(qMatch[1]) : NaN;
+          const isShelf = shapeStr.includes('SHELF') || shapeStr.includes('LS');
+          const filterType: FilterType = isShelf ? 'lowshelf' : 'peaking';
+          const defaultQ = isShelf ? 0.71 : 1.41;
+          const finalQ = !isNaN(qVal) && qVal > 0 ? Math.max(0.1, Math.min(20, qVal)) : defaultQ;
+
+          let width: FilterWidth = 'normal';
+          if (finalQ >= 3.0) width = 'narrow';
+          else if (finalQ <= 0.9) width = 'wide';
+
+          fixes.push({
+            frequency: Math.max(MIN_FREQ, Math.min(MAX_FREQ, Math.round(freq))),
+            gain: Math.max(MIN_GAIN, Math.min(MAX_GAIN, Math.round(gain * 10) / 10)),
+            q: finalQ,
+            width,
+            filterType,
+            enabled: true,
+            label: isShelf ? 'Bass Shelf' : undefined,
+          });
+          continue;
+        }
+      }
+    }
 
     // e.g. "Filter 1: ON PK Fc 6200 Hz Gain -4.0 dB Q 4.5"
     // or "Filter 1: ON LSC Fc 105 Hz Gain 4.5 dB Q 0.71"
     // or "Filter: PK Fc 6200 Gain -4.0 Q 4.5"
-    const apoMatch = line.match(/(?:Filter\s*\d*:?\s*)?(ON|OFF)?\s*([A-Za-z]+)\s+Fc\s+([\d.]+)\s*(?:Hz)?\s+Gain\s+([+-]?[\d.]+)\s*(?:dB)?\s+Q\s+([\d.]+)/i);
+    // or "Filter: LS Fc 105 Gain +4.5 Q 0.71"
+    const apoMatch = line.match(
+      /(?:Filter\s*\d*:?\s*)?(ON|OFF)?\s*([A-Za-z0-9_]+)\s+Fc\s+([\d.]+)\s*(?:Hz)?\s+Gain\s+([+-]?[\d.]+)(?:\s*dB)?(?:\s+Q\s+([\d.]+))?/i
+    );
     if (apoMatch) {
       const enabled = apoMatch[1] ? apoMatch[1].toUpperCase() === 'ON' : true;
       const typeKey = apoMatch[2].toUpperCase();
       const freq = parseFloat(apoMatch[3]);
       const gain = parseFloat(apoMatch[4]);
-      const q = parseFloat(apoMatch[5]);
+      const q = apoMatch[5] ? parseFloat(apoMatch[5]) : NaN;
 
-      const filterType = (typeKey === 'LSC' || typeKey === 'LS' || typeKey === 'LOWSHELF') ? 'lowshelf' : 'peaking';
+      const isShelf =
+        typeKey === 'LSC' ||
+        typeKey === 'LS' ||
+        typeKey.includes('SHELF') ||
+        typeKey.startsWith('LOW');
+      const filterType: FilterType = isShelf ? 'lowshelf' : 'peaking';
+      const defaultQ = isShelf ? 0.71 : 1.41;
+      const finalQ = !isNaN(q) && q > 0 ? Math.max(0.1, Math.min(20, q)) : defaultQ;
 
       let width: FilterWidth = 'normal';
-      if (q >= 3.0) width = 'narrow';
-      else if (q <= 0.9) width = 'wide';
+      if (finalQ >= 3.0) width = 'narrow';
+      else if (finalQ <= 0.9) width = 'wide';
 
       if (!isNaN(freq) && !isNaN(gain)) {
         fixes.push({
           frequency: Math.max(MIN_FREQ, Math.min(MAX_FREQ, Math.round(freq))),
           gain: Math.max(MIN_GAIN, Math.min(MAX_GAIN, Math.round(gain * 10) / 10)),
-          q: !isNaN(q) ? Math.max(0.1, Math.min(20, q)) : WIDTH_MAP[width].q,
+          q: finalQ,
           width,
           filterType,
           enabled,
+          label: isShelf ? 'Bass Shelf' : undefined,
         });
       }
     }
