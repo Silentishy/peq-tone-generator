@@ -374,7 +374,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
             </div>
           </div>
 
-          {/* 2. Specific Q Value Controller (High Precision with Slider & Direct Number Input) */}
+          {/* 2. Specific Q Value Controller (High Precision with Direct Number Input) */}
           <div className="flex flex-col gap-2 pt-2 border-t border-studio-border/60">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-1.5 text-xs font-semibold text-slate-200">
@@ -417,37 +417,6 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
                 >
                   +0.1
                 </button>
-              </div>
-            </div>
-
-            {/* Smooth Q Slider */}
-            <div className="flex flex-col gap-1">
-              <input
-                type="range"
-                min="0.1"
-                max={isShelf ? "3.0" : "15.0"}
-                step="0.02"
-                value={qVal}
-                onChange={(e) => handleQChange(parseFloat(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-              />
-              <div className="flex justify-between text-[10px] font-mono text-slate-500 px-0.5">
-                {isShelf ? (
-                  <>
-                    <span>0.30 (Gentle)</span>
-                    <span>0.71 (Butterworth/Harman)</span>
-                    <span>1.41 (Resonant)</span>
-                    <span>3.00 (Steep)</span>
-                  </>
-                ) : (
-                  <>
-                    <span>0.20 (Broad)</span>
-                    <span>0.71 (Wide)</span>
-                    <span>1.41 (Normal)</span>
-                    <span>4.50 (Narrow)</span>
-                    <span>15.0 (Surgical)</span>
-                  </>
-                )}
               </div>
             </div>
 
