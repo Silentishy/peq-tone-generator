@@ -1,5 +1,11 @@
 import { BenchmarkTrackId, EQFix, ToneMode } from '../types/audio';
-import { calculateEqualLoudnessGain, calculateCombinedFilterResponse, MIN_FREQ, MAX_FREQ } from '../utils/eqMath';
+import {
+  calculateEqualLoudnessGain,
+  calculateCombinedFilterResponse,
+  getBiquadFilterCoeffs,
+  MIN_FREQ,
+  MAX_FREQ,
+} from '../utils/eqMath';
 
 export interface MusicState {
   isLoaded: boolean;
@@ -104,7 +110,7 @@ export class AudioEngine {
   private onMusicStateChange?: (state: MusicState) => void;
 
   // Filter chain
-  private filterNodes: Map<string, BiquadFilterNode> = new Map();
+  private filterNodes: Map<string, AudioNode> = new Map();
   private filterInputNode: GainNode | null = null;
   private filterOutputNode: GainNode | null = null;
 
@@ -489,17 +495,40 @@ export class AudioEngine {
     }
 
     let previousNode: AudioNode = this.filterInputNode;
+    const sampleRate = this.ctx.sampleRate || 48000;
 
     activeFixes.forEach((fix) => {
       if (!this.ctx) return;
-      const node = this.ctx.createBiquadFilter();
-      node.channelCount = 2;
-      node.channelCountMode = 'explicit';
-      node.channelInterpretation = 'speakers';
-      node.type = fix.filterType || 'peaking';
-      node.frequency.setValueAtTime(fix.frequency, this.ctx.currentTime);
-      node.gain.setValueAtTime(fix.gain, this.ctx.currentTime);
-      node.Q.setValueAtTime(fix.q, this.ctx.currentTime);
+      let node: AudioNode;
+
+      if (fix.filterType === 'lowshelf') {
+        const { feedforward, feedback } = getBiquadFilterCoeffs(fix, sampleRate);
+        try {
+          node = this.ctx.createIIRFilter(feedforward, feedback);
+          node.channelCount = 2;
+          node.channelCountMode = 'explicit';
+          node.channelInterpretation = 'speakers';
+        } catch {
+          const bq = this.ctx.createBiquadFilter();
+          bq.channelCount = 2;
+          bq.channelCountMode = 'explicit';
+          bq.channelInterpretation = 'speakers';
+          bq.type = 'lowshelf';
+          bq.frequency.setValueAtTime(fix.frequency, this.ctx.currentTime);
+          bq.gain.setValueAtTime(fix.gain, this.ctx.currentTime);
+          node = bq;
+        }
+      } else {
+        const bq = this.ctx.createBiquadFilter();
+        bq.channelCount = 2;
+        bq.channelCountMode = 'explicit';
+        bq.channelInterpretation = 'speakers';
+        bq.type = 'peaking';
+        bq.frequency.setValueAtTime(fix.frequency, this.ctx.currentTime);
+        bq.gain.setValueAtTime(fix.gain, this.ctx.currentTime);
+        bq.Q.setValueAtTime(fix.q, this.ctx.currentTime);
+        node = bq;
+      }
 
       this.filterNodes.set(fix.id, node);
       previousNode.connect(node);
@@ -511,16 +540,16 @@ export class AudioEngine {
 
   public updateLiveFix(fix: EQFix) {
     const node = this.filterNodes.get(fix.id);
-    if (!node || !this.ctx || this.isBypassed) {
+    if (!node || !this.ctx || this.isBypassed || fix.filterType === 'lowshelf') {
       this.rebuildFilterChain(this.currentFixes);
       return;
     }
 
+    const bq = node as BiquadFilterNode;
     const now = this.ctx.currentTime;
-    node.type = fix.filterType || 'peaking';
-    node.frequency.setTargetAtTime(fix.frequency, now, 0.015);
-    node.gain.setTargetAtTime(fix.gain, now, 0.015);
-    node.Q.setTargetAtTime(fix.q, now, 0.015);
+    bq.frequency.setTargetAtTime(fix.frequency, now, 0.015);
+    bq.gain.setTargetAtTime(fix.gain, now, 0.015);
+    bq.Q.setTargetAtTime(fix.q, now, 0.015);
   }
 
   // --- Frequency Response for Canvas Graph ---

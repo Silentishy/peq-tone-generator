@@ -7,6 +7,7 @@ import {
   Sliders,
   Sparkles,
   Waves,
+  Activity,
 } from 'lucide-react';
 import { EQFix, FilterType, FilterWidth } from '../types/audio';
 import { WIDTH_MAP, MIN_GAIN, MAX_GAIN } from '../utils/eqMath';
@@ -21,6 +22,12 @@ interface FrequencyFixerCardProps {
   onSelectFrequency?: (freq: number) => void;
   isAudioRunning: boolean;
   onStartAudio: () => void;
+}
+
+function getWidthFromQ(q: number): FilterWidth {
+  if (q >= 3.0) return 'narrow';
+  if (q <= 0.9) return 'wide';
+  return 'normal';
 }
 
 export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
@@ -40,43 +47,45 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
   );
 
   const [gain, setGain] = React.useState<number>(existingFix ? existingFix.gain : -3.0);
-  const [width, setWidth] = React.useState<FilterWidth>(existingFix ? existingFix.width : 'normal');
   const [filterType, setFilterType] = React.useState<FilterType>(existingFix?.filterType || 'peaking');
+  const [qVal, setQVal] = React.useState<number>(existingFix ? existingFix.q : 1.41);
 
   // Synchronize state when moving to a frequency that already has a fix
   React.useEffect(() => {
     if (existingFix) {
       setGain(existingFix.gain);
-      setWidth(existingFix.width);
       setFilterType(existingFix.filterType || 'peaking');
+      setQVal(existingFix.q || (existingFix.filterType === 'lowshelf' ? 0.71 : 1.41));
     } else {
       setGain(-3.0);
-      setWidth('normal');
       setFilterType('peaking');
+      setQVal(1.41);
     }
   }, [existingFix, currentFreq]);
 
-  // Live update if editing existing fix
+  // Live update if editing existing fix - preserves qVal
   const handleGainChange = (newGain: number) => {
     setGain(newGain);
     if (existingFix) {
       onUpdateFix({
         ...existingFix,
         gain: newGain,
-        width,
-        q: WIDTH_MAP[width].q,
+        q: qVal,
+        width: getWidthFromQ(qVal),
         filterType,
       });
     }
   };
 
-  const handleWidthChange = (newWidth: FilterWidth) => {
-    setWidth(newWidth);
+  // Specific Q value adjustment
+  const handleQChange = (newQ: number) => {
+    const clampedQ = Math.max(0.1, Math.min(25.0, Math.round(newQ * 100) / 100));
+    setQVal(clampedQ);
     if (existingFix) {
       onUpdateFix({
         ...existingFix,
-        width: newWidth,
-        q: WIDTH_MAP[newWidth].q,
+        q: clampedQ,
+        width: getWidthFromQ(clampedQ),
         filterType,
       });
     }
@@ -84,18 +93,21 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
 
   const handleShapeChange = (newShape: FilterType) => {
     setFilterType(newShape);
+    const targetQ = existingFix ? existingFix.q : newShape === 'lowshelf' ? 0.71 : 1.41;
+    setQVal(targetQ);
     if (existingFix) {
       onUpdateFix({
         ...existingFix,
         filterType: newShape,
-        q: newShape === 'lowshelf' ? 0.71 : WIDTH_MAP[width].q,
+        q: targetQ,
+        width: getWidthFromQ(targetQ),
       });
     }
   };
 
   const handleApplyFix = (
     suggestedGain: number,
-    suggestedWidth: FilterWidth = 'normal',
+    suggestedQ: number = filterType === 'lowshelf' ? 0.71 : 1.41,
     suggestedType: FilterType = 'peaking'
   ) => {
     if (!isAudioRunning) {
@@ -103,7 +115,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
     }
 
     setGain(suggestedGain);
-    setWidth(suggestedWidth);
+    setQVal(suggestedQ);
     setFilterType(suggestedType);
 
     if (existingFix) {
@@ -111,16 +123,16 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
         ...existingFix,
         frequency: currentFreq,
         gain: suggestedGain,
-        width: suggestedWidth,
-        q: suggestedType === 'lowshelf' ? 0.71 : WIDTH_MAP[suggestedWidth].q,
+        q: suggestedQ,
+        width: getWidthFromQ(suggestedQ),
         filterType: suggestedType,
       });
     } else {
       onSaveFix({
         frequency: currentFreq,
         gain: suggestedGain,
-        width: suggestedWidth,
-        q: suggestedType === 'lowshelf' ? 0.71 : WIDTH_MAP[suggestedWidth].q,
+        q: suggestedQ,
+        width: getWidthFromQ(suggestedQ),
         filterType: suggestedType,
         enabled: true,
       });
@@ -161,11 +173,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
     }
   };
 
-  const widthOptions: { key: FilterWidth; title: string; desc: string }[] = [
-    { key: 'narrow', title: t.widthNarrowTitle, desc: t.widthNarrowDesc },
-    { key: 'normal', title: t.widthNormalTitle, desc: t.widthNormalDesc },
-    { key: 'wide', title: t.widthWideTitle, desc: t.widthWideDesc },
-  ];
+  const isShelf = filterType === 'lowshelf';
 
   return (
     <div id="step-2-fixer" className="bg-studio-panel border border-studio-border rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col gap-4">
@@ -188,7 +196,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
               : 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
           }`}>
             <CheckCircle2 className="w-3.5 h-3.5" />
-            {existingFix.filterType === 'lowshelf' ? t.bassShelfBadge : t.fixActive}: {existingFix.gain >= 0 ? `+${existingFix.gain}` : existingFix.gain} dB
+            {existingFix.filterType === 'lowshelf' ? t.bassShelfBadge : t.fixActive}: {existingFix.gain >= 0 ? `+${existingFix.gain}` : existingFix.gain} dB (Q: {existingFix.q.toFixed(2)})
           </span>
         ) : (
           <span className="text-xs text-slate-400">
@@ -242,7 +250,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {/* Too Loud (Peak Cut) */}
         <button
-          onClick={() => handleApplyFix(-3.5, 'narrow', filterType)}
+          onClick={() => handleApplyFix(-3.5, isShelf ? 0.71 : 4.5, filterType)}
           className={`flex items-center justify-center space-x-2 p-3 rounded-xl border text-xs font-bold transition shadow active:scale-95 ${
             existingFix && existingFix.gain < 0
               ? 'bg-rose-500/20 border-rose-500 text-rose-200 ring-2 ring-rose-500/40'
@@ -255,7 +263,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
 
         {/* Too Quiet (Dip Boost) */}
         <button
-          onClick={() => handleApplyFix(3.0, 'normal', filterType)}
+          onClick={() => handleApplyFix(3.0, isShelf ? 0.71 : 1.41, filterType)}
           className={`flex items-center justify-center space-x-2 p-3 rounded-xl border text-xs font-bold transition shadow active:scale-95 ${
             existingFix && existingFix.gain > 0
               ? 'bg-sky-500/20 border-sky-500 text-sky-200 ring-2 ring-sky-500/40'
@@ -293,7 +301,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
             </div>
           )}
 
-          {/* Live Gain Slider */}
+          {/* 1. Live Gain Slider */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-300">
@@ -366,35 +374,187 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
             </div>
           </div>
 
-          {/* Width / Sharpness Options (only for bell/peaking filters) */}
-          {filterType === 'peaking' && (
-            <div>
-              <span className="text-xs font-semibold text-slate-300 block mb-2">
-                {t.widthLabel}
-              </span>
-              <div className="grid grid-cols-3 gap-2">
-                {widthOptions.map((opt) => {
-                  const isSelected = width === opt.key;
-                  return (
-                    <button
-                      key={opt.key}
-                      onClick={() => handleWidthChange(opt.key)}
-                      className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
-                        isSelected
-                          ? 'bg-cyan-500/15 border-cyan-400 text-cyan-200'
-                          : 'bg-studio-panel border-studio-border text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <span className="text-xs font-bold block">{opt.title}</span>
-                      <span className="text-[11px] text-slate-400 mt-1 leading-tight block">
-                        {opt.desc}
-                      </span>
-                    </button>
-                  );
-                })}
+          {/* 2. Specific Q Value Controller (High Precision with Slider & Direct Number Input) */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-studio-border/60">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1.5 text-xs font-semibold text-slate-200">
+                <Activity className="w-4 h-4 text-cyan-400" />
+                <span>{t.exactQLabel}</span>
+              </div>
+
+              {/* Exact Q Numeric Input + Steppers */}
+              <div className="flex items-center space-x-1">
+                <button
+                  type="button"
+                  onClick={() => handleQChange(qVal - (isShelf ? 0.05 : 0.1))}
+                  className="px-1.5 py-0.5 rounded bg-studio-panel hover:bg-slate-700 text-slate-300 font-mono text-xs border border-studio-border active:scale-95"
+                  title="Decrease Q by 0.1"
+                >
+                  -0.1
+                </button>
+
+                <div className="flex items-center bg-studio-panel border border-cyan-400/80 rounded-lg px-2 py-0.5">
+                  <span className="text-xs font-mono text-cyan-400 font-bold mr-1">Q:</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.1"
+                    max="25.0"
+                    value={qVal}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) handleQChange(val);
+                    }}
+                    className="w-16 bg-transparent text-sm font-mono font-black text-cyan-300 focus:outline-none text-right"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleQChange(qVal + (isShelf ? 0.05 : 0.1))}
+                  className="px-1.5 py-0.5 rounded bg-studio-panel hover:bg-slate-700 text-slate-300 font-mono text-xs border border-studio-border active:scale-95"
+                  title="Increase Q by 0.1"
+                >
+                  +0.1
+                </button>
               </div>
             </div>
-          )}
+
+            {/* Smooth Q Slider */}
+            <div className="flex flex-col gap-1">
+              <input
+                type="range"
+                min="0.1"
+                max={isShelf ? "3.0" : "15.0"}
+                step="0.02"
+                value={qVal}
+                onChange={(e) => handleQChange(parseFloat(e.target.value))}
+                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+              />
+              <div className="flex justify-between text-[10px] font-mono text-slate-500 px-0.5">
+                {isShelf ? (
+                  <>
+                    <span>0.30 (Gentle)</span>
+                    <span>0.71 (Butterworth/Harman)</span>
+                    <span>1.41 (Resonant)</span>
+                    <span>3.00 (Steep)</span>
+                  </>
+                ) : (
+                  <>
+                    <span>0.20 (Broad)</span>
+                    <span>0.71 (Wide)</span>
+                    <span>1.41 (Normal)</span>
+                    <span>4.50 (Narrow)</span>
+                    <span>15.0 (Surgical)</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Preset Buttons for Q */}
+            <div className="flex items-center flex-wrap gap-1.5 pt-1">
+              <span className="text-[11px] text-slate-500 font-mono mr-1">Presets:</span>
+              {isShelf ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleQChange(0.5)}
+                    className={`px-2 py-0.5 rounded-lg border text-xs font-mono transition ${
+                      Math.abs(qVal - 0.5) < 0.03
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400 font-bold'
+                        : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    0.50 (Gentle)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQChange(0.71)}
+                    className={`px-2 py-0.5 rounded-lg border text-xs font-mono transition ${
+                      Math.abs(qVal - 0.71) < 0.03
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400 font-bold'
+                        : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    0.71 (Harman/Flat)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQChange(1.0)}
+                    className={`px-2 py-0.5 rounded-lg border text-xs font-mono transition ${
+                      Math.abs(qVal - 1.0) < 0.03
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400 font-bold'
+                        : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    1.00 (Steep)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQChange(1.41)}
+                    className={`px-2 py-0.5 rounded-lg border text-xs font-mono transition ${
+                      Math.abs(qVal - 1.41) < 0.03
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400 font-bold'
+                        : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    1.41 (Resonant)
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleQChange(0.71)}
+                    className={`px-2 py-0.5 rounded-lg border text-xs font-mono transition ${
+                      Math.abs(qVal - 0.71) < 0.05
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 font-bold'
+                        : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    0.71 (Wide)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQChange(1.41)}
+                    className={`px-2 py-0.5 rounded-lg border text-xs font-mono transition ${
+                      Math.abs(qVal - 1.41) < 0.05
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 font-bold'
+                        : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    1.41 (Normal)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQChange(4.5)}
+                    className={`px-2 py-0.5 rounded-lg border text-xs font-mono transition ${
+                      Math.abs(qVal - 4.5) < 0.1
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 font-bold'
+                        : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    4.50 (Narrow)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQChange(8.0)}
+                    className={`px-2 py-0.5 rounded-lg border text-xs font-mono transition ${
+                      Math.abs(qVal - 8.0) < 0.1
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 font-bold'
+                        : 'bg-studio-panel border-studio-border text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    8.00 (Surgical)
+                  </button>
+                </>
+              )}
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+              {isShelf ? t.qNoticeShelf : t.qNoticeBell}
+            </p>
+          </div>
 
           {/* Bottom Feedback */}
           <div className="flex items-center justify-between pt-2 border-t border-studio-border/60">

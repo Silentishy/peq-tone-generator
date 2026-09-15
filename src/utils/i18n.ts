@@ -56,6 +56,9 @@ export interface Translations {
   gainLabel: string;
   quickPresets: string;
   widthLabel: string;
+  exactQLabel: string;
+  qNoticeShelf: string;
+  qNoticeBell: string;
   widthNarrowTitle: string;
   widthNarrowDesc: string;
   widthNormalTitle: string;
@@ -258,7 +261,10 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     soundsNormalBtn: 'SOUNDS NORMAL (NO FIX)',
     gainLabel: 'Loudness Adjustment (dB):',
     quickPresets: 'Quick:',
-    widthLabel: 'Filter Width:',
+    widthLabel: 'Filter Width & Q Factor:',
+    exactQLabel: 'Exact Q Value:',
+    qNoticeShelf: 'Low Shelf slope: Q=0.71 is the standard smooth Butterworth slope (no overshoot). Higher Q values steepen the transition with slight resonance.',
+    qNoticeBell: 'Higher Q values narrow the filter to surgically pinpoint a sharp peak. Lower Q values widen the filter for broad tonal balance.',
     widthNarrowTitle: 'Narrow (Q: 4.5)',
     widthNarrowDesc: 'Target a sharp, ringing peak or notch',
     widthNormalTitle: 'Normal (Q: 1.41)',
@@ -270,7 +276,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shapeShelf: '🌊 Bass Shelf (Low Shelf)',
     addHarmanShelfBtn: '+ Harman Bass Shelf (+4.5 dB @ 105 Hz)',
     bassShelfBadge: 'Bass Shelf',
-    bassShelfDesc: 'Low Shelf filter boosts or cuts all sub-bass below this frequency',
+    bassShelfDesc: 'Low Shelf filter smoothly boosts or cuts all sub-bass below this frequency.',
     liveFeedback: 'Live sound updated! Listen through your headphones.',
     deleteFix: 'Delete Fix',
 
@@ -460,7 +466,10 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     soundsNormalBtn: '声音均衡 (无需修正)',
     gainLabel: '响度增益微调 (dB)：',
     quickPresets: '快速分贝：',
-    widthLabel: '滤波器带宽 (宽度)：',
+    widthLabel: '滤波器带宽与 Q 值控制：',
+    exactQLabel: '精确 Q 值 (品质因子 / 斜率)：',
+    qNoticeShelf: '低音搁架斜率：Q=0.71 为标准平滑巴特沃斯斜率（无隆起超调），数值越大过渡越陡峭并带有微弱共振。',
+    qNoticeBell: 'Q值越大带宽越窄，适合手术刀般精准切除狭窄刺耳峰；Q值越小带宽越宽，适合大范围平缓调音。',
     widthNarrowTitle: '窄频 (Q: 4.5)',
     widthNarrowDesc: '精准消除刺耳共振尖峰或狭窄陷波',
     widthNormalTitle: '标准 (Q: 1.41)',
@@ -472,7 +481,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shapeShelf: '🌊 低音搁架滤波 (Bass Shelf)',
     addHarmanShelfBtn: '+ 添加哈曼低音搁架 (+4.5 dB @ 105 Hz)',
     bassShelfBadge: '低音搁架',
-    bassShelfDesc: '低音搁架滤波：提升或削减该截止频率以下的所有超低频',
+    bassShelfDesc: '低音搁架滤波：平滑提升或削减该截止频率以下的所有超低频。',
     liveFeedback: '声音已实时更新！戴上耳机立即感受变化。',
     deleteFix: '删除此项修正',
 

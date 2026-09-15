@@ -288,6 +288,51 @@ export function yToGain(y: number, height: number, minGain = -15, maxGain = 15):
 }
 
 /**
+ * Calculate exact normalized biquad coefficients for both Peaking and Low Shelf filters.
+ * Matches standard Audio EQ Cookbook definitions and provides precise Q slope control.
+ */
+export function getBiquadFilterCoeffs(
+  fix: EQFix,
+  sampleRate = 48000
+): { feedforward: number[]; feedback: number[] } {
+  const f0 = Math.max(MIN_FREQ, Math.min(MAX_FREQ, fix.frequency));
+  const gain = fix.gain;
+  const q = Math.max(0.1, fix.q || (fix.filterType === 'lowshelf' ? 0.71 : 1.41));
+  const isShelf = fix.filterType === 'lowshelf';
+
+  const A = Math.pow(10, gain / 40);
+  const w0 = (2 * Math.PI * f0) / sampleRate;
+  const cosW0 = Math.cos(w0);
+  const sinW0 = Math.sin(w0);
+
+  let b0 = 1, b1 = 0, b2 = 0, a0 = 1, a1 = 0, a2 = 0;
+
+  if (isShelf) {
+    const twoSqrtAAlpha = (Math.sqrt(A) * sinW0) / q;
+    b0 = A * ((A + 1) - (A - 1) * cosW0 + twoSqrtAAlpha);
+    b1 = 2 * A * ((A - 1) - (A + 1) * cosW0);
+    b2 = A * ((A + 1) - (A - 1) * cosW0 - twoSqrtAAlpha);
+    a0 = (A + 1) + (A - 1) * cosW0 + twoSqrtAAlpha;
+    a1 = -2 * ((A - 1) + (A + 1) * cosW0);
+    a2 = (A + 1) + (A - 1) * cosW0 - twoSqrtAAlpha;
+  } else {
+    // Peaking / Bell filter
+    const alpha = sinW0 / (2 * q);
+    b0 = 1 + alpha * A;
+    b1 = -2 * cosW0;
+    b2 = 1 - alpha * A;
+    a0 = 1 + alpha / A;
+    a1 = -2 * cosW0;
+    a2 = 1 - alpha / A;
+  }
+
+  return {
+    feedforward: [b0 / a0, b1 / a0, b2 / a0],
+    feedback: [1, a1 / a0, a2 / a0],
+  };
+}
+
+/**
  * Analytical frequency response calculation for all filters.
  * Runs instantly without requiring an active Web Audio AudioContext, so curves
  * render immediately on page load and stay perfectly synchronized.
@@ -302,43 +347,12 @@ export function calculateCombinedFilterResponse(
   if (activeFixes.length === 0) return dbResponse;
 
   for (const fix of activeFixes) {
-    const f0 = fix.frequency;
-    const gain = fix.gain;
-    const q = Math.max(0.1, fix.q);
-    const isShelf = fix.filterType === 'lowshelf';
-
-    const A = Math.pow(10, gain / 40);
-    const w0 = (2 * Math.PI * f0) / sampleRate;
-    const cosW0 = Math.cos(w0);
-    const sinW0 = Math.sin(w0);
-
-    let b0 = 1, b1 = 0, b2 = 0, a0 = 1, a1 = 0, a2 = 0;
-
-    if (isShelf) {
-      const alpha = sinW0 / (2 * q);
-      const twoSqrtAAlpha = 2 * Math.sqrt(A) * alpha;
-      b0 = A * ((A + 1) - (A - 1) * cosW0 + twoSqrtAAlpha);
-      b1 = 2 * A * ((A - 1) - (A + 1) * cosW0);
-      b2 = A * ((A + 1) - (A - 1) * cosW0 - twoSqrtAAlpha);
-      a0 = (A + 1) + (A - 1) * cosW0 + twoSqrtAAlpha;
-      a1 = -2 * ((A - 1) + (A + 1) * cosW0);
-      a2 = (A + 1) + (A - 1) * cosW0 - twoSqrtAAlpha;
-    } else {
-      // Peaking / Bell filter
-      const alpha = sinW0 / (2 * q);
-      b0 = 1 + alpha * A;
-      b1 = -2 * cosW0;
-      b2 = 1 - alpha * A;
-      a0 = 1 + alpha / A;
-      a1 = -2 * cosW0;
-      a2 = 1 - alpha / A;
-    }
-
-    const nb0 = b0 / a0;
-    const nb1 = b1 / a0;
-    const nb2 = b2 / a0;
-    const na1 = a1 / a0;
-    const na2 = a2 / a0;
+    const { feedforward, feedback } = getBiquadFilterCoeffs(fix, sampleRate);
+    const nb0 = feedforward[0];
+    const nb1 = feedforward[1];
+    const nb2 = feedforward[2];
+    const na1 = feedback[1];
+    const na2 = feedback[2];
 
     for (let i = 0; i < freqPoints.length; i++) {
       const f = freqPoints[i];

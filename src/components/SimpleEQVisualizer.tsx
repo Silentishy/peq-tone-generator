@@ -681,61 +681,31 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     }
   };
 
-  // Scroll wheel:
-  // 1. Over a filter node: continuous high-precision Q adjustment across dozens of fine stages
-  // 2. Over canvas background: smooth fine-grained zoom adjustment
+  // Scroll wheel on canvas adjusts smooth zoom
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    const targetId = hoveredFixId || draggingFixId;
-    if (targetId && onUpdateFix && showNodes) {
-      e.preventDefault();
-      const fix = fixes.find((f) => f.id === targetId);
-      if (!fix) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.width / dpr;
+    const hoverFreq = xToFreq(mouseX, width, minFreq, maxFreq);
 
-      // Many stages for scroll wheel on a node: continuous fine-grained Q stepping
-      const currentQ = fix.q || WIDTH_MAP[fix.width].q;
-      let step = 0.05;
-      if (currentQ >= 8.0) step = 0.5;
-      else if (currentQ >= 4.0) step = 0.25;
-      else if (currentQ >= 2.0) step = 0.1;
-      else step = 0.05;
-
-      const delta = e.deltaY < 0 ? step : -step;
-      const newQ = Math.max(0.1, Math.min(25.0, Math.round((currentQ + delta) * 100) / 100));
-
-      let newWidth: FilterWidth = 'normal';
-      if (newQ >= 3.0) newWidth = 'narrow';
-      else if (newQ <= 0.9) newWidth = 'wide';
-
-      onUpdateFix({
-        ...fix,
-        q: newQ,
-        width: newWidth,
-      });
+    // Fine-grained zoom stages (1.08x per notch for smooth precision)
+    const zoomFactor = 1.08;
+    if (e.deltaY < 0) {
+      // Zoom In
+      const nextZoom = Math.min(10, Math.round((horizontalZoom * zoomFactor) * 100) / 100);
+      setHorizontalZoom(nextZoom);
+      setFocusCenterFreq(Math.round(hoverFreq));
+      updateWindow(hoverFreq, nextZoom);
     } else {
-      e.preventDefault();
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const dpr = window.devicePixelRatio || 1;
-      const width = canvas.width / dpr;
-      const hoverFreq = xToFreq(mouseX, width, minFreq, maxFreq);
-
-      // Fine-grained zoom stages (1.08x per notch for smooth precision)
-      const zoomFactor = 1.08;
-      if (e.deltaY < 0) {
-        // Zoom In
-        const nextZoom = Math.min(10, Math.round((horizontalZoom * zoomFactor) * 100) / 100);
-        setHorizontalZoom(nextZoom);
-        setFocusCenterFreq(Math.round(hoverFreq));
-        updateWindow(hoverFreq, nextZoom);
-      } else {
-        // Zoom Out
-        const nextZoom = Math.max(1, Math.round((horizontalZoom / zoomFactor) * 100) / 100);
-        setHorizontalZoom(nextZoom);
-        setFocusCenterFreq(Math.round(hoverFreq));
-        updateWindow(hoverFreq, nextZoom);
-      }
+      // Zoom Out
+      const nextZoom = Math.max(1, Math.round((horizontalZoom / zoomFactor) * 100) / 100);
+      setHorizontalZoom(nextZoom);
+      setFocusCenterFreq(Math.round(hoverFreq));
+      updateWindow(hoverFreq, nextZoom);
     }
   };
 
