@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SimpleHeader } from './components/SimpleHeader';
-import { WorkflowStepper } from './components/WorkflowStepper';
 import { FrequencyScanner } from './components/FrequencyScanner';
 import { FrequencyFixerCard } from './components/FrequencyFixerCard';
 import { SimpleEQVisualizer } from './components/SimpleEQVisualizer';
@@ -144,22 +143,6 @@ export const App: React.FC = () => {
     setProfiles((prev) =>
       prev.map((p) => (p.id === activeProfileId ? { ...p, preamp: val, autoPreamp: auto } : p))
     );
-  };
-
-  const handleStepClick = (step: number) => {
-    const targetMap: Record<number, string> = {
-      1: 'step-1-scanner',
-      2: 'step-2-fixer',
-      3: 'step-3-audition',
-      4: 'step-4-visualizer',
-    };
-    const targetId = targetMap[step];
-    if (targetId) {
-      const el = document.getElementById(targetId);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
   };
 
   // Master Audio Toggle (Pure Tone)
@@ -411,10 +394,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main Container */}
-      <main className="flex-1 p-3 sm:p-5 lg:p-6 max-w-[1600px] w-full mx-auto flex flex-col gap-4 sm:gap-5">
-        {/* Guided 4-Step Tuning Workflow Navigation Banner */}
-        <WorkflowStepper onStepClick={handleStepClick} />
-
+      <main className="flex-1 p-3 sm:p-5 lg:p-6 max-w-[1600px] w-full mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* Left Column: Frequency Scanner & On-The-Spot Fixer & Music Audition */}
           <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-5">
