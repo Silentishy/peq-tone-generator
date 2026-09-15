@@ -105,6 +105,20 @@ export interface Translations {
   zoomOut: string;
   zoomReset: string;
   dbScaleLabel: string;
+  toggleCurveEq: string;
+  toggleCurveNet: string;
+  toggleCurveBaseline: string;
+  toggleCurveRta: string;
+  toggleCurveNodes: string;
+  focusRangeLabel: string;
+  focusFull: string;
+  focusBass: string;
+  focusMids: string;
+  focusTreble: string;
+  focusAir: string;
+  focusActiveBtn: string;
+  panLeft: string;
+  panRight: string;
 
   // Fixes List (Step 5)
   step4Title: string;
@@ -293,11 +307,25 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     afterEqCurveLabel: 'Frequency Response After EQ',
     netPreampCurveLabel: 'Net Output (with Preamp)',
     bypassedLabel: 'BYPASS (Original 0 dB)',
-    dragHint: 'Drag nodes: horizontal = Freq, vertical = Gain. Scroll wheel = Width. Click +/- to zoom.',
+    dragHint: 'Drag nodes: horizontal = Freq, vertical = Gain. Scroll wheel = Width. Click +/- or drag background to zoom & pan.',
     zoomIn: 'Zoom In',
     zoomOut: 'Zoom Out',
     zoomReset: 'Reset Zoom',
     dbScaleLabel: 'Scale:',
+    toggleCurveEq: 'EQ Curve',
+    toggleCurveNet: 'Net Preamp',
+    toggleCurveBaseline: '0 dB Line',
+    toggleCurveRta: 'RTA Glow',
+    toggleCurveNodes: 'Nodes',
+    focusRangeLabel: 'Focus Range:',
+    focusFull: 'Full (20-20k)',
+    focusBass: 'Bass (20-350Hz)',
+    focusMids: 'Mids (250-4kHz)',
+    focusTreble: 'Treble (3k-12kHz)',
+    focusAir: 'Air (8k-20kHz)',
+    focusActiveBtn: '🎯 Focus Active',
+    panLeft: 'Pan Left',
+    panRight: 'Pan Right',
 
     // Fixes List
     step4Title: 'My EQ Fixes',
@@ -485,11 +513,25 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     afterEqCurveLabel: 'EQ 修正后频响曲线',
     netPreampCurveLabel: '净输出 (含前级增益)',
     bypassedLabel: '直通原声 (0 dB)',
-    dragHint: '直接拖拽节点：水平调节频率，垂直调节增益。滚轮调节宽度，点击 +/- 可缩放视图。',
+    dragHint: '直接拖拽节点：水平调节频率，垂直调节增益。滚轮调节宽度，拖拽空白背景可平移聚焦。',
     zoomIn: '放大视图',
     zoomOut: '缩小视图',
     zoomReset: '重置缩放',
     dbScaleLabel: '刻度：',
+    toggleCurveEq: 'EQ 曲线',
+    toggleCurveNet: '净输出',
+    toggleCurveBaseline: '0 dB 基准线',
+    toggleCurveRta: '实时光谱',
+    toggleCurveNodes: '调节节点',
+    focusRangeLabel: '频段聚焦：',
+    focusFull: '全频 (20-20k)',
+    focusBass: '低频 (20-350Hz)',
+    focusMids: '中频 (250-4kHz)',
+    focusTreble: '高频 (3k-12kHz)',
+    focusAir: '极高频 (8k-20kHz)',
+    focusActiveBtn: '🎯 聚焦当前点',
+    panLeft: '向左平移',
+    panRight: '向右平移',
 
     // Fixes List
     step4Title: '已应用的 EQ 修正清单',
