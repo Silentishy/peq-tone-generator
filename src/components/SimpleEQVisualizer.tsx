@@ -5,7 +5,6 @@ import {
   RotateCcw,
   Eye,
   EyeOff,
-  Target,
   Layers,
 } from 'lucide-react';
 import { EQFix, FilterWidth } from '../types/audio';
@@ -34,7 +33,8 @@ interface SimpleEQVisualizerProps {
   isBypassed?: boolean;
 }
 
-const DB_ZOOM_LEVELS = [6, 12, 18, 24]; // ±6 dB, ±12 dB, ±18 dB, ±24 dB
+// 7 precision stages for vertical dB scale: ±3 dB to ±24 dB
+const DB_ZOOM_LEVELS = [3, 6, 9, 12, 15, 18, 24];
 
 export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   fixes,
@@ -52,8 +52,8 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   const freqPointsRef = useRef<Float32Array | null>(null);
   const numPoints = 512;
 
-  // Vertical dB Zoom
-  const [dbZoomIdx, setDbZoomIdx] = useState<number>(1); // Index 1 = ±12 dB
+  // Vertical dB Zoom: Index 3 corresponds to ±12 dB default
+  const [dbZoomIdx, setDbZoomIdx] = useState<number>(3);
   const currentDbRange = DB_ZOOM_LEVELS[dbZoomIdx];
 
   // Horizontal Frequency Focus & Zoom State
@@ -82,7 +82,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     hasMoved: boolean;
   } | null>(null);
 
-  const isZoomedIn = horizontalZoom > 1 || dbZoomIdx !== 1;
+  const isZoomedIn = horizontalZoom > 1 || dbZoomIdx !== 3;
 
   // Compute and apply minFreq and maxFreq based on center frequency and zoom factor
   const updateWindow = useCallback((centerF: number, zoom: number) => {
@@ -124,12 +124,12 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     freqPointsRef.current = points;
   }, [minFreq, maxFreq]);
 
-  // Zoom In / Out Handlers
+  // Zoom In / Out Handlers with smooth stepping
   const handleZoomIn = () => {
     if (dbZoomIdx > 0) {
       setDbZoomIdx((prev) => prev - 1);
     }
-    const nextZoom = Math.min(10, Math.round((horizontalZoom * 1.5) * 10) / 10);
+    const nextZoom = Math.min(10, Math.round((horizontalZoom * 1.35) * 10) / 10);
     setHorizontalZoom(nextZoom);
     updateWindow(focusCenterFreq, nextZoom);
   };
@@ -138,26 +138,17 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     if (dbZoomIdx < DB_ZOOM_LEVELS.length - 1) {
       setDbZoomIdx((prev) => prev + 1);
     }
-    const nextZoom = Math.max(1, Math.round((horizontalZoom / 1.5) * 10) / 10);
+    const nextZoom = Math.max(1, Math.round((horizontalZoom / 1.35) * 10) / 10);
     setHorizontalZoom(nextZoom);
     updateWindow(focusCenterFreq, nextZoom);
   };
 
   const handleZoomReset = () => {
-    setDbZoomIdx(1); // Reset to ±12 dB
+    setDbZoomIdx(3); // Reset to ±12 dB (index 3)
     setHorizontalZoom(1);
     setFocusCenterFreq(1000);
     setMinFreq(MIN_FREQ);
     setMaxFreq(MAX_FREQ);
-  };
-
-  // Focus directly around the active / current frequency
-  const handleFocusActiveFrequency = () => {
-    const nextCenter = Math.round(currentFreq);
-    setFocusCenterFreq(nextCenter);
-    const nextZoom = Math.max(3.0, horizontalZoom);
-    setHorizontalZoom(nextZoom);
-    updateWindow(nextCenter, nextZoom);
   };
 
   // Frequency Focus Slider Handler (Logarithmic 20 Hz – 20,000 Hz)
@@ -268,12 +259,18 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
         ctx.restore();
       }
 
-      // 2. Dynamic dB Horizontal Grid Lines & Y-Axis Scale
+      // 2. Dynamic dB Horizontal Grid Lines & Y-Axis Scale (7 Precision Stages)
       const dbSteps =
-        currentDbRange === 6
+        currentDbRange === 3
+          ? [3, 2, 1, 0, -1, -2, -3]
+          : currentDbRange === 6
           ? [6, 3, 0, -3, -6]
+          : currentDbRange === 9
+          ? [9, 6, 3, 0, -3, -6, -9]
           : currentDbRange === 12
           ? [12, 6, 0, -6, -12]
+          : currentDbRange === 15
+          ? [15, 10, 5, 0, -5, -10, -15]
           : currentDbRange === 18
           ? [18, 12, 6, 0, -6, -12, -18]
           : [24, 18, 12, 6, 0, -6, -12, -18, -24];
@@ -591,7 +588,6 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
       const fix = fixes.find((f) => f.id === hitId);
       if (fix) onSelectFrequency(fix.frequency);
     } else {
-      // Start potential pan or click
       panStateRef.current = {
         isPanning: isZoomedIn,
         startX: e.clientX,
@@ -670,7 +666,6 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     }
 
     if (panStateRef.current) {
-      // If user clicked without dragging, jump frequency to clicked spot
       if (!panStateRef.current.hasMoved && !draggingFixId) {
         const canvas = canvasRef.current;
         if (canvas) {
@@ -686,7 +681,9 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     }
   };
 
-  // Scroll wheel: on a node cycles width; on canvas background zooms in/out centered on mouse
+  // Scroll wheel:
+  // 1. Over a filter node: continuous high-precision Q adjustment across dozens of fine stages
+  // 2. Over canvas background: smooth fine-grained zoom adjustment
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     const targetId = hoveredFixId || draggingFixId;
     if (targetId && onUpdateFix && showNodes) {
@@ -694,15 +691,25 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
       const fix = fixes.find((f) => f.id === targetId);
       if (!fix) return;
 
-      const widths: FilterWidth[] = ['narrow', 'normal', 'wide'];
-      const currentIdx = widths.indexOf(fix.width);
-      const nextIdx = e.deltaY < 0 ? (currentIdx - 1 + 3) % 3 : (currentIdx + 1) % 3;
-      const nextWidth = widths[nextIdx];
+      // Many stages for scroll wheel on a node: continuous fine-grained Q stepping
+      const currentQ = fix.q || WIDTH_MAP[fix.width].q;
+      let step = 0.05;
+      if (currentQ >= 8.0) step = 0.5;
+      else if (currentQ >= 4.0) step = 0.25;
+      else if (currentQ >= 2.0) step = 0.1;
+      else step = 0.05;
+
+      const delta = e.deltaY < 0 ? step : -step;
+      const newQ = Math.max(0.1, Math.min(25.0, Math.round((currentQ + delta) * 100) / 100));
+
+      let newWidth: FilterWidth = 'normal';
+      if (newQ >= 3.0) newWidth = 'narrow';
+      else if (newQ <= 0.9) newWidth = 'wide';
 
       onUpdateFix({
         ...fix,
-        width: nextWidth,
-        q: WIDTH_MAP[nextWidth].q,
+        q: newQ,
+        width: newWidth,
       });
     } else {
       e.preventDefault();
@@ -714,24 +721,20 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
       const width = canvas.width / dpr;
       const hoverFreq = xToFreq(mouseX, width, minFreq, maxFreq);
 
+      // Fine-grained zoom stages (1.08x per notch for smooth precision)
+      const zoomFactor = 1.08;
       if (e.deltaY < 0) {
-        // Zoom In centered at mouse
-        const nextZoom = Math.min(10, Math.round((horizontalZoom * 1.3) * 10) / 10);
+        // Zoom In
+        const nextZoom = Math.min(10, Math.round((horizontalZoom * zoomFactor) * 100) / 100);
         setHorizontalZoom(nextZoom);
         setFocusCenterFreq(Math.round(hoverFreq));
         updateWindow(hoverFreq, nextZoom);
-        if (dbZoomIdx > 0 && Math.abs(e.deltaY) > 50) {
-          setDbZoomIdx((prev) => prev - 1);
-        }
       } else {
         // Zoom Out
-        const nextZoom = Math.max(1, Math.round((horizontalZoom / 1.3) * 10) / 10);
+        const nextZoom = Math.max(1, Math.round((horizontalZoom / zoomFactor) * 100) / 100);
         setHorizontalZoom(nextZoom);
         setFocusCenterFreq(Math.round(hoverFreq));
         updateWindow(hoverFreq, nextZoom);
-        if (dbZoomIdx < DB_ZOOM_LEVELS.length - 1 && Math.abs(e.deltaY) > 50) {
-          setDbZoomIdx((prev) => prev + 1);
-        }
       }
     }
   };
@@ -827,7 +830,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
 
   return (
     <div id="step-4-visualizer" className="bg-studio-panel border border-studio-border rounded-2xl p-3 sm:p-5 shadow-xl flex flex-col gap-3">
-      {/* Header: Step title + Zoom Steppers */}
+      {/* Header: Step title + Vertical dB Scale Steppers */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
           <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center border border-cyan-500/40">
@@ -858,7 +861,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
         </div>
       </div>
 
-      {/* Frequency Focus & Zoom Slider (Replaces Focus Range Buttons) */}
+      {/* Frequency Focus Slider */}
       <div className="flex flex-col gap-1.5 bg-studio-surface/90 p-2.5 sm:p-3 rounded-xl border border-studio-border/70 text-xs">
         <div className="flex flex-wrap items-center justify-between gap-1.5">
           <div className="flex items-center space-x-2 min-w-0">
@@ -880,17 +883,6 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
             <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-studio-panel border border-studio-border text-amber-300">
               {horizontalZoom.toFixed(1)}x
             </span>
-
-            {/* Focus on Active Tone Frequency */}
-            <button
-              type="button"
-              onClick={handleFocusActiveFrequency}
-              className="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 transition active:scale-95 flex items-center gap-1 shadow-sm"
-              title="Center frequency focus on current tone frequency"
-            >
-              <Target className="w-3 h-3 text-amber-400" />
-              <span>{t.focusActiveBtn}</span>
-            </button>
           </div>
         </div>
 
