@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SimpleHeader } from './components/SimpleHeader';
 import { FrequencyScanner } from './components/FrequencyScanner';
 import { FrequencyFixerCard } from './components/FrequencyFixerCard';
@@ -74,6 +74,17 @@ export const App: React.FC = () => {
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
 
+  // Undo History (snapshots of the active profile's fixes & preamp)
+  interface UndoSnapshot {
+    fixes: EQFix[];
+    preamp?: number;
+    autoPreamp?: boolean;
+  }
+  const [undoStack, setUndoStack] = useState<UndoSnapshot[]>([]);
+  const lastUndoPushRef = useRef<number>(0);
+  const UNDO_COALESCE_MS = 700;
+  const UNDO_MAX_DEPTH = 50;
+
   // Save Profiles to localStorage
   useEffect(() => {
     try {
@@ -104,7 +115,9 @@ export const App: React.FC = () => {
 
   // Profile Management
   const handleSelectProfile = (id: string) => {
+    if (id === activeProfileId) return;
     setActiveProfileId(id);
+    setUndoStack([]);
     const target = profiles.find((p) => p.id === id);
     if (target) {
       engine.rebuildFilterChain(target.fixes);
@@ -122,6 +135,7 @@ export const App: React.FC = () => {
     const updated = [...profiles, newProfile];
     setProfiles(updated);
     setActiveProfileId(newProfile.id);
+    setUndoStack([]);
   };
 
   const handleRenameProfile = (id: string, newName: string) => {
@@ -136,10 +150,12 @@ export const App: React.FC = () => {
     setProfiles(remaining);
     if (activeProfileId === id) {
       setActiveProfileId(remaining[0].id);
+      setUndoStack([]);
     }
   };
 
   const handleUpdatePreamp = (val: number, auto: boolean) => {
+    pushUndoSnapshot(false);
     setProfiles((prev) =>
       prev.map((p) => (p.id === activeProfileId ? { ...p, preamp: val, autoPreamp: auto } : p))
     );
@@ -231,7 +247,30 @@ export const App: React.FC = () => {
   };
 
   // Fixes Handlers (scoped to activeProfile)
+  // Captures the current fixes & preamp so the next change can be undone.
+  // force=false coalesces rapid consecutive updates (slider scrubs, node
+  // dragging) into a single undo step.
+  const pushUndoSnapshot = useCallback(
+    (force = false) => {
+      const now = Date.now();
+      if (!force && now - lastUndoPushRef.current < UNDO_COALESCE_MS) {
+        lastUndoPushRef.current = now;
+        return;
+      }
+      lastUndoPushRef.current = now;
+      setUndoStack((prev) => {
+        const next = [
+          ...prev,
+          { fixes, preamp: activeProfile.preamp, autoPreamp: activeProfile.autoPreamp },
+        ];
+        return next.length > UNDO_MAX_DEPTH ? next.slice(next.length - UNDO_MAX_DEPTH) : next;
+      });
+    },
+    [fixes, activeProfile]
+  );
+
   const updateActiveProfileFixes = (newFixes: EQFix[]) => {
+    pushUndoSnapshot(true);
     setProfiles((prev) =>
       prev.map((p) => (p.id === activeProfileId ? { ...p, fixes: newFixes } : p))
     );
@@ -248,6 +287,7 @@ export const App: React.FC = () => {
 
   const handleUpdateFix = useCallback(
     (updatedFix: EQFix) => {
+      pushUndoSnapshot(false);
       setProfiles((prev) =>
         prev.map((p) =>
           p.id === activeProfileId
@@ -257,7 +297,7 @@ export const App: React.FC = () => {
       );
       engine.updateLiveFix(updatedFix);
     },
-    [activeProfileId, engine]
+    [activeProfileId, engine, pushUndoSnapshot]
   );
 
   const handleRemoveFix = (id: string) => {
@@ -284,6 +324,7 @@ export const App: React.FC = () => {
   };
 
   const handleImportFixes = (imported: Partial<EQFix>[], parsedPreamp?: number) => {
+    pushUndoSnapshot(true);
     const newFixes: EQFix[] = imported.map((item, idx) => {
       const filterType = item.filterType || 'peaking';
       const defaultQ = filterType === 'lowshelf' ? 0.71 : 1.41;
@@ -314,6 +355,21 @@ export const App: React.FC = () => {
     );
   };
 
+  // Undo: restore the most recent snapshot of the active profile's fixes & preamp
+  const handleUndo = useCallback(() => {
+    if (undoStack.length === 0) return;
+    const last = undoStack[undoStack.length - 1];
+    setProfiles((prev) =>
+      prev.map((p) =>
+        p.id === activeProfileId
+          ? { ...p, fixes: last.fixes, preamp: last.preamp, autoPreamp: last.autoPreamp }
+          : p
+      )
+    );
+    setUndoStack((prev) => prev.slice(0, -1));
+    lastUndoPushRef.current = 0;
+  }, [undoStack, activeProfileId]);
+
   // Keyboard Shortcuts Listener for Eyes-Closed Tuning
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -322,7 +378,10 @@ export const App: React.FC = () => {
         return;
       }
 
-      if (e.code === 'Space') {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        handleUndo();
+      } else if (e.code === 'Space') {
         e.preventDefault();
         if (musicState.isLoaded) {
           handleToggleMusicPlay();
@@ -373,6 +432,7 @@ export const App: React.FC = () => {
     isBypassed,
     isAutoScanning,
     handleUpdateFix,
+    handleUndo,
   ]);
 
   return (
@@ -472,6 +532,8 @@ export const App: React.FC = () => {
                 onSelectFix={handleSelectFixFromLedger}
                 onRemoveFix={handleRemoveFix}
                 onClearAll={handleClearAllFixes}
+                canUndo={undoStack.length > 0}
+                onUndo={handleUndo}
               />
             </section>
           </div>

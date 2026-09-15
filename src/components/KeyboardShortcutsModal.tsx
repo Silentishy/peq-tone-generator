@@ -45,6 +45,11 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
       desc: t.shortcutSDesc,
       tag: 'Auto-Scan',
     },
+    {
+      keys: ['Ctrl / ⌘', 'Z'],
+      desc: t.shortcutUndoDesc,
+      tag: 'Undo',
+    },
   ];
 
   return (

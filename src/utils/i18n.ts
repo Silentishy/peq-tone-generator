@@ -122,6 +122,8 @@ export interface Translations {
   // Fixes List (Step 5)
   step4Title: string;
   clearAll: string;
+  undoBtn: string;
+  undoTooltip: string;
   confirmClear: string;
   noFixesYet: string;
   peakCut: string;
@@ -186,6 +188,7 @@ export interface Translations {
   shortcutArrowsUDSDesc: string;
   shortcutBDesc: string;
   shortcutSDesc: string;
+  shortcutUndoDesc: string;
   shortcutCloseBtn: string;
 
   // Help Modal
@@ -328,6 +331,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     // Fixes List
     step4Title: 'My EQ Fixes',
     clearAll: 'Clear All',
+    undoBtn: 'Undo',
+    undoTooltip: 'Undo the last change (Ctrl/Cmd+Z)',
     confirmClear: 'Clear all applied EQ fixes in this profile and start fresh?',
     noFixesYet: 'No fixes created yet! Use Step 1 to scan through frequencies. When a spot sounds noticeably piercing or quiet, stop and adjust it in Step 2.',
     peakCut: 'Peak Cut',
@@ -392,6 +397,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shortcutArrowsUDSDesc: 'Adjust gain for active frequency (±0.5 dB)',
     shortcutBDesc: 'Instant A/B Compare (Toggle EQ / Bypass)',
     shortcutSDesc: 'Toggle Auto-Scan frequency walker',
+    shortcutUndoDesc: 'Undo the last EQ change (add, edit, delete, clear, or import)',
     shortcutCloseBtn: 'Close',
 
     // Help Modal
@@ -533,6 +539,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     // Fixes List
     step4Title: '已应用的 EQ 修正清单',
     clearAll: '清空当前配置',
+    undoBtn: '撤销',
+    undoTooltip: '撤销上一次修改 (Ctrl/Cmd+Z)',
     confirmClear: '确定要清空当前设备配置下的所有已应用的调音修正吗？',
     noFixesYet: '当前配置尚未添加任何修正。请在步骤 1 中扫描频段，如果发现刺耳或凹陷频点，暂停并在步骤 2 中进行调节。',
     peakCut: '削减尖峰',
@@ -597,6 +605,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shortcutArrowsUDSDesc: '上 / 下方向键调节当前频点的增益分贝 (±0.5 dB)',
     shortcutBDesc: '一键 A/B 对比切换 (切换 EQ 修正 / 原声直通)',
     shortcutSDesc: '开启 / 暂停自动频段扫描',
+    shortcutUndoDesc: '撤销上一次 EQ 修改（新增、调整、删除、清空或导入）',
     shortcutCloseBtn: '我知道了',
 
     // Help Modal
