@@ -110,15 +110,11 @@ export interface Translations {
   toggleCurveBaseline: string;
   toggleCurveRta: string;
   toggleCurveNodes: string;
-  focusRangeLabel: string;
-  focusFull: string;
-  focusBass: string;
-  focusMids: string;
-  focusTreble: string;
-  focusAir: string;
+  freqFocusSliderLabel: string;
+  freqFocusCenter: string;
+  freqFocusVisible: string;
+  zoomLevelLabel: string;
   focusActiveBtn: string;
-  panLeft: string;
-  panRight: string;
 
   // Fixes List (Step 5)
   step4Title: string;
@@ -317,15 +313,11 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     toggleCurveBaseline: '0 dB Line',
     toggleCurveRta: 'RTA Glow',
     toggleCurveNodes: 'Nodes',
-    focusRangeLabel: 'Focus Range:',
-    focusFull: 'Full (20-20k)',
-    focusBass: 'Bass (20-350Hz)',
-    focusMids: 'Mids (250-4kHz)',
-    focusTreble: 'Treble (3k-12kHz)',
-    focusAir: 'Air (8k-20kHz)',
+    freqFocusSliderLabel: 'Frequency Focus Slider:',
+    freqFocusCenter: 'Center:',
+    freqFocusVisible: 'Visible Window:',
+    zoomLevelLabel: 'Zoom:',
     focusActiveBtn: '🎯 Focus Active',
-    panLeft: 'Pan Left',
-    panRight: 'Pan Right',
 
     // Fixes List
     step4Title: 'My EQ Fixes',
@@ -523,15 +515,11 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     toggleCurveBaseline: '0 dB 基准线',
     toggleCurveRta: '实时光谱',
     toggleCurveNodes: '调节节点',
-    focusRangeLabel: '频段聚焦：',
-    focusFull: '全频 (20-20k)',
-    focusBass: '低频 (20-350Hz)',
-    focusMids: '中频 (250-4kHz)',
-    focusTreble: '高频 (3k-12kHz)',
-    focusAir: '极高频 (8k-20kHz)',
+    freqFocusSliderLabel: '频段聚焦滑块：',
+    freqFocusCenter: '中心：',
+    freqFocusVisible: '显示范围：',
+    zoomLevelLabel: '缩放：',
     focusActiveBtn: '🎯 聚焦当前点',
-    panLeft: '向左平移',
-    panRight: '向右平移',
 
     // Fixes List
     step4Title: '已应用的 EQ 修正清单',

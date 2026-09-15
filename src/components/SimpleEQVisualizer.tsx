@@ -6,8 +6,6 @@ import {
   Eye,
   EyeOff,
   Target,
-  ChevronLeft,
-  ChevronRight,
   Layers,
 } from 'lucide-react';
 import { EQFix, FilterWidth } from '../types/audio';
@@ -58,12 +56,11 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   const [dbZoomIdx, setDbZoomIdx] = useState<number>(1); // Index 1 = ±12 dB
   const currentDbRange = DB_ZOOM_LEVELS[dbZoomIdx];
 
-  // Horizontal Frequency Zoom Window
+  // Horizontal Frequency Focus & Zoom State
+  const [horizontalZoom, setHorizontalZoom] = useState<number>(1); // 1x to 10x
+  const [focusCenterFreq, setFocusCenterFreq] = useState<number>(1000);
   const [minFreq, setMinFreq] = useState<number>(MIN_FREQ);
   const [maxFreq, setMaxFreq] = useState<number>(MAX_FREQ);
-
-  // Active Focus Range Preset Tag
-  const [activeFocusPreset, setActiveFocusPreset] = useState<string>('full');
 
   // Curve & Layer Visibility Toggles
   const [showEqCurve, setShowEqCurve] = useState<boolean>(true);
@@ -85,7 +82,35 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     hasMoved: boolean;
   } | null>(null);
 
-  const isZoomedIn = minFreq > MIN_FREQ || maxFreq < MAX_FREQ || dbZoomIdx !== 1;
+  const isZoomedIn = horizontalZoom > 1 || dbZoomIdx !== 1;
+
+  // Compute and apply minFreq and maxFreq based on center frequency and zoom factor
+  const updateWindow = useCallback((centerF: number, zoom: number) => {
+    if (zoom <= 1) {
+      setMinFreq(MIN_FREQ);
+      setMaxFreq(MAX_FREQ);
+      return;
+    }
+    const totalSpan = Math.log10(MAX_FREQ) - Math.log10(MIN_FREQ);
+    const span = totalSpan / zoom;
+    const halfSpan = span / 2;
+    const centerLog = Math.log10(Math.max(MIN_FREQ, Math.min(MAX_FREQ, centerF)));
+
+    let minLog = centerLog - halfSpan;
+    let maxLog = centerLog + halfSpan;
+
+    if (minLog < Math.log10(MIN_FREQ)) {
+      minLog = Math.log10(MIN_FREQ);
+      maxLog = minLog + span;
+    }
+    if (maxLog > Math.log10(MAX_FREQ)) {
+      maxLog = Math.log10(MAX_FREQ);
+      minLog = maxLog - span;
+    }
+
+    setMinFreq(Math.round(Math.pow(10, minLog)));
+    setMaxFreq(Math.round(Math.pow(10, maxLog)));
+  }, []);
 
   // Initialize frequency sample points on log scale
   useEffect(() => {
@@ -99,138 +124,59 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     freqPointsRef.current = points;
   }, [minFreq, maxFreq]);
 
-  // Zoom Handlers
+  // Zoom In / Out Handlers
   const handleZoomIn = () => {
-    // Zoom vertical dB scale
     if (dbZoomIdx > 0) {
       setDbZoomIdx((prev) => prev - 1);
     }
-    // Zoom horizontal frequency scale towards center/active frequency
-    zoomFrequencyWindow(1.6, currentFreq);
+    const nextZoom = Math.min(10, Math.round((horizontalZoom * 1.5) * 10) / 10);
+    setHorizontalZoom(nextZoom);
+    updateWindow(focusCenterFreq, nextZoom);
   };
 
   const handleZoomOut = () => {
-    // Zoom vertical dB scale out
     if (dbZoomIdx < DB_ZOOM_LEVELS.length - 1) {
       setDbZoomIdx((prev) => prev + 1);
     }
-    // Zoom horizontal frequency scale out
-    zoomFrequencyWindow(1 / 1.6, currentFreq);
+    const nextZoom = Math.max(1, Math.round((horizontalZoom / 1.5) * 10) / 10);
+    setHorizontalZoom(nextZoom);
+    updateWindow(focusCenterFreq, nextZoom);
   };
 
   const handleZoomReset = () => {
     setDbZoomIdx(1); // Reset to ±12 dB
+    setHorizontalZoom(1);
+    setFocusCenterFreq(1000);
     setMinFreq(MIN_FREQ);
     setMaxFreq(MAX_FREQ);
-    setActiveFocusPreset('full');
   };
 
-  // Zoom in/out horizontally centered on a specific frequency
-  const zoomFrequencyWindow = (factor: number, centerF: number) => {
-    const safeCenter = Math.max(minFreq, Math.min(maxFreq, centerF));
-    const logCenter = Math.log10(safeCenter);
-    const logMin = Math.log10(minFreq);
-    const logMax = Math.log10(maxFreq);
-    const currentSpan = logMax - logMin;
-    const newSpan = Math.max(0.5, Math.min(Math.log10(MAX_FREQ) - Math.log10(MIN_FREQ), currentSpan / factor));
-
-    if (newSpan >= Math.log10(MAX_FREQ) - Math.log10(MIN_FREQ)) {
-      setMinFreq(MIN_FREQ);
-      setMaxFreq(MAX_FREQ);
-      setActiveFocusPreset('full');
-      return;
-    }
-
-    const centerRatio = (logCenter - logMin) / currentSpan;
-    let nextLogMin = logCenter - centerRatio * newSpan;
-    let nextLogMax = logCenter + (1 - centerRatio) * newSpan;
-
-    if (nextLogMin < Math.log10(MIN_FREQ)) {
-      nextLogMin = Math.log10(MIN_FREQ);
-      nextLogMax = nextLogMin + newSpan;
-    }
-    if (nextLogMax > Math.log10(MAX_FREQ)) {
-      nextLogMax = Math.log10(MAX_FREQ);
-      nextLogMin = nextLogMax - newSpan;
-    }
-
-    setMinFreq(Math.round(Math.pow(10, nextLogMin)));
-    setMaxFreq(Math.round(Math.pow(10, nextLogMax)));
-    setActiveFocusPreset('custom');
-  };
-
-  // Focus directly around the active / current frequency (4x zoom)
+  // Focus directly around the active / current frequency
   const handleFocusActiveFrequency = () => {
-    const fCenter = Math.max(MIN_FREQ, Math.min(MAX_FREQ, currentFreq));
-    const spanOctaves = 1.3; // ±1.3 octaves on each side
-    let fMin = fCenter / Math.pow(2, spanOctaves);
-    let fMax = fCenter * Math.pow(2, spanOctaves);
-
-    if (fMin < MIN_FREQ) {
-      const ratio = MIN_FREQ / fMin;
-      fMin = MIN_FREQ;
-      fMax = Math.min(MAX_FREQ, fMax * ratio);
-    }
-    if (fMax > MAX_FREQ) {
-      const ratio = fMax / MAX_FREQ;
-      fMax = MAX_FREQ;
-      fMin = Math.max(MIN_FREQ, fMin / ratio);
-    }
-
-    setMinFreq(Math.round(fMin));
-    setMaxFreq(Math.round(fMax));
-    setActiveFocusPreset('active');
+    const nextCenter = Math.round(currentFreq);
+    setFocusCenterFreq(nextCenter);
+    const nextZoom = Math.max(3.0, horizontalZoom);
+    setHorizontalZoom(nextZoom);
+    updateWindow(nextCenter, nextZoom);
   };
 
-  // Quick Preset Frequency Ranges
-  const handleSelectFocusRange = (range: 'full' | 'bass' | 'mids' | 'treble' | 'air') => {
-    setActiveFocusPreset(range);
-    switch (range) {
-      case 'full':
-        setMinFreq(MIN_FREQ);
-        setMaxFreq(MAX_FREQ);
-        break;
-      case 'bass':
-        setMinFreq(20);
-        setMaxFreq(350);
-        break;
-      case 'mids':
-        setMinFreq(250);
-        setMaxFreq(4000);
-        break;
-      case 'treble':
-        setMinFreq(3000);
-        setMaxFreq(12000);
-        break;
-      case 'air':
-        setMinFreq(8000);
-        setMaxFreq(20000);
-        break;
+  // Frequency Focus Slider Handler (Logarithmic 20 Hz – 20,000 Hz)
+  const sliderLogMin = Math.log10(MIN_FREQ);
+  const sliderLogMax = Math.log10(MAX_FREQ);
+  const focusSliderVal = ((Math.log10(Math.max(MIN_FREQ, Math.min(MAX_FREQ, focusCenterFreq))) - sliderLogMin) / (sliderLogMax - sliderLogMin)) * 1000;
+
+  const handleFocusSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    const logVal = sliderLogMin + (val / 1000) * (sliderLogMax - sliderLogMin);
+    const nextCenter = Math.round(Math.pow(10, logVal));
+    setFocusCenterFreq(nextCenter);
+
+    // If user was at 1x, automatically apply a 2.5x zoom so focusing is immediately useful
+    const effectiveZoom = horizontalZoom === 1 ? 2.5 : horizontalZoom;
+    if (horizontalZoom === 1) {
+      setHorizontalZoom(2.5);
     }
-  };
-
-  // Pan frequency window horizontally by a fraction of span
-  const handlePan = (direction: 'left' | 'right') => {
-    const logMin = Math.log10(minFreq);
-    const logMax = Math.log10(maxFreq);
-    const span = logMax - logMin;
-    const shift = (direction === 'left' ? -0.35 : 0.35) * span;
-
-    let nextLogMin = logMin + shift;
-    let nextLogMax = logMax + shift;
-
-    if (nextLogMin < Math.log10(MIN_FREQ)) {
-      nextLogMin = Math.log10(MIN_FREQ);
-      nextLogMax = nextLogMin + span;
-    }
-    if (nextLogMax > Math.log10(MAX_FREQ)) {
-      nextLogMax = Math.log10(MAX_FREQ);
-      nextLogMin = nextLogMax - span;
-    }
-
-    setMinFreq(Math.round(Math.pow(10, nextLogMin)));
-    setMaxFreq(Math.round(Math.pow(10, nextLogMax)));
-    setActiveFocusPreset('custom');
+    updateWindow(nextCenter, effectiveZoom);
   };
 
   // Dynamic Frequency Landmark Grid Lines for Zoomed Views
@@ -704,9 +650,11 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
           nextLogMin = nextLogMax - span;
         }
 
-        setMinFreq(Math.round(Math.pow(10, nextLogMin)));
-        setMaxFreq(Math.round(Math.pow(10, nextLogMax)));
-        setActiveFocusPreset('custom');
+        const newMinF = Math.round(Math.pow(10, nextLogMin));
+        const newMaxF = Math.round(Math.pow(10, nextLogMax));
+        setMinFreq(newMinF);
+        setMaxFreq(newMaxF);
+        setFocusCenterFreq(Math.round(Math.pow(10, (nextLogMin + nextLogMax) / 2)));
       }
       return;
     }
@@ -768,13 +716,19 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
 
       if (e.deltaY < 0) {
         // Zoom In centered at mouse
-        zoomFrequencyWindow(1.35, hoverFreq);
+        const nextZoom = Math.min(10, Math.round((horizontalZoom * 1.3) * 10) / 10);
+        setHorizontalZoom(nextZoom);
+        setFocusCenterFreq(Math.round(hoverFreq));
+        updateWindow(hoverFreq, nextZoom);
         if (dbZoomIdx > 0 && Math.abs(e.deltaY) > 50) {
           setDbZoomIdx((prev) => prev - 1);
         }
       } else {
         // Zoom Out
-        zoomFrequencyWindow(1 / 1.35, hoverFreq);
+        const nextZoom = Math.max(1, Math.round((horizontalZoom / 1.3) * 10) / 10);
+        setHorizontalZoom(nextZoom);
+        setFocusCenterFreq(Math.round(hoverFreq));
+        updateWindow(hoverFreq, nextZoom);
         if (dbZoomIdx < DB_ZOOM_LEVELS.length - 1 && Math.abs(e.deltaY) > 50) {
           setDbZoomIdx((prev) => prev + 1);
         }
@@ -851,9 +805,11 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
           nextLogMin = nextLogMax - span;
         }
 
-        setMinFreq(Math.round(Math.pow(10, nextLogMin)));
-        setMaxFreq(Math.round(Math.pow(10, nextLogMax)));
-        setActiveFocusPreset('custom');
+        const newMinF = Math.round(Math.pow(10, nextLogMin));
+        const newMaxF = Math.round(Math.pow(10, nextLogMax));
+        setMinFreq(newMinF);
+        setMaxFreq(newMaxF);
+        setFocusCenterFreq(Math.round(Math.pow(10, (nextLogMin + nextLogMax) / 2)));
       }
     }
   };
@@ -882,7 +838,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
           </h2>
         </div>
 
-        {/* Zoom Controls Bar */}
+        {/* Vertical Scale Badge & Zoom Reset */}
         <div className="flex items-center space-x-1.5 bg-studio-surface px-2 py-1 rounded-xl border border-studio-border text-xs">
           <span className="text-[10px] font-mono text-slate-400 hidden xs:inline">
             {t.dbScaleLabel}
@@ -890,24 +846,6 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
           <span className="font-mono text-xs font-bold text-cyan-300 px-1">
             ±{currentDbRange} dB
           </span>
-
-          <button
-            type="button"
-            onClick={handleZoomIn}
-            className="p-1 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white transition active:scale-95"
-            title={t.zoomIn}
-          >
-            <ZoomIn className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={handleZoomOut}
-            className="p-1 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white transition active:scale-95"
-            title={t.zoomOut}
-          >
-            <ZoomOut className="w-3.5 h-3.5" />
-          </button>
 
           <button
             type="button"
@@ -920,110 +858,82 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
         </div>
       </div>
 
-      {/* Focus Range Presets & Pan Bar (Focus on parts of the frequency curve) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-studio-surface/90 px-2.5 py-1.5 rounded-xl border border-studio-border/70 text-xs">
-        <div className="flex items-center space-x-1.5 overflow-x-auto scrollbar-none py-0.5">
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider hidden sm:inline">
-            {t.focusRangeLabel}
-          </span>
-
-          {/* Quick Focus Range Buttons */}
-          <button
-            type="button"
-            onClick={() => handleSelectFocusRange('full')}
-            className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition active:scale-95 ${
-              activeFocusPreset === 'full'
-                ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 shadow-sm'
-                : 'bg-studio-panel border border-studio-border text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {t.focusFull}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSelectFocusRange('bass')}
-            className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition active:scale-95 ${
-              activeFocusPreset === 'bass'
-                ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 shadow-sm'
-                : 'bg-studio-panel border border-studio-border text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {t.focusBass}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSelectFocusRange('mids')}
-            className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition active:scale-95 ${
-              activeFocusPreset === 'mids'
-                ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 shadow-sm'
-                : 'bg-studio-panel border border-studio-border text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {t.focusMids}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSelectFocusRange('treble')}
-            className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition active:scale-95 ${
-              activeFocusPreset === 'treble'
-                ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 shadow-sm'
-                : 'bg-studio-panel border border-studio-border text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {t.focusTreble}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSelectFocusRange('air')}
-            className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition active:scale-95 ${
-              activeFocusPreset === 'air'
-                ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 shadow-sm'
-                : 'bg-studio-panel border border-studio-border text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {t.focusAir}
-          </button>
-
-          {/* Focus on Active Frequency Button */}
-          <button
-            type="button"
-            onClick={handleFocusActiveFrequency}
-            className="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 transition active:scale-95 flex items-center gap-1 shadow-sm"
-            title="Focus zoom directly on current tone frequency"
-          >
-            <Target className="w-3 h-3 text-amber-400" />
-            <span>{t.focusActiveBtn}</span>
-          </button>
-        </div>
-
-        {/* Pan Controls (visible when zoomed in) */}
-        {isZoomedIn && (
-          <div className="flex items-center space-x-1">
-            <button
-              type="button"
-              onClick={() => handlePan('left')}
-              className="p-1 rounded bg-studio-panel hover:bg-slate-700 border border-studio-border text-slate-300 hover:text-white transition active:scale-95"
-              title={t.panLeft}
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-[10px] font-mono text-slate-400">
-              {minFreq >= 1000 ? `${(minFreq / 1000).toFixed(1)}k` : `${minFreq}`}-{maxFreq >= 1000 ? `${(maxFreq / 1000).toFixed(1)}k` : `${maxFreq}`}Hz
+      {/* Frequency Focus & Zoom Slider (Replaces Focus Range Buttons) */}
+      <div className="flex flex-col gap-1.5 bg-studio-surface/90 p-2.5 sm:p-3 rounded-xl border border-studio-border/70 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-1.5">
+          <div className="flex items-center space-x-2 min-w-0">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-300 flex-shrink-0">
+              {t.freqFocusSliderLabel}
             </span>
+            <span className="text-xs font-mono font-bold text-cyan-300 flex-shrink-0">
+              {focusCenterFreq >= 1000 ? `${(focusCenterFreq / 1000).toFixed(2)}k` : focusCenterFreq} Hz
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {/* Visible Window Readout */}
+            <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
+              {t.freqFocusVisible} {minFreq >= 1000 ? `${(minFreq / 1000).toFixed(1)}k` : minFreq} – {maxFreq >= 1000 ? `${(maxFreq / 1000).toFixed(1)}k` : maxFreq} Hz
+            </span>
+
+            {/* Current Zoom Multiplier Badge */}
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-studio-panel border border-studio-border text-amber-300">
+              {horizontalZoom.toFixed(1)}x
+            </span>
+
+            {/* Focus on Active Tone Frequency */}
             <button
               type="button"
-              onClick={() => handlePan('right')}
-              className="p-1 rounded bg-studio-panel hover:bg-slate-700 border border-studio-border text-slate-300 hover:text-white transition active:scale-95"
-              title={t.panRight}
+              onClick={handleFocusActiveFrequency}
+              className="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 transition active:scale-95 flex items-center gap-1 shadow-sm"
+              title="Center frequency focus on current tone frequency"
             >
-              <ChevronRight className="w-3.5 h-3.5" />
+              <Target className="w-3 h-3 text-amber-400" />
+              <span>{t.focusActiveBtn}</span>
             </button>
           </div>
-        )}
+        </div>
+
+        {/* The Slider Row with Zoom +/- Steppers */}
+        <div className="flex items-center space-x-2 pt-0.5">
+          <button
+            type="button"
+            onClick={handleZoomOut}
+            className="p-1.5 rounded-lg bg-studio-panel hover:bg-slate-700 border border-studio-border text-slate-300 hover:text-white transition active:scale-95 flex-shrink-0"
+            title={t.zoomOut}
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Smooth Logarithmic Focus Center Slider */}
+          <div className="flex-1 flex flex-col gap-0.5">
+            <input
+              type="range"
+              min="0"
+              max="1000"
+              step="1"
+              value={focusSliderVal}
+              onChange={handleFocusSliderChange}
+              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+            />
+            <div className="flex justify-between text-[9px] font-mono text-slate-500 px-0.5">
+              <span>20 Hz</span>
+              <span>100 Hz</span>
+              <span>1 kHz</span>
+              <span>6 kHz</span>
+              <span>20 kHz</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleZoomIn}
+            className="p-1.5 rounded-lg bg-studio-panel hover:bg-slate-700 border border-studio-border text-slate-300 hover:text-white transition active:scale-95 flex-shrink-0"
+            title={t.zoomIn}
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Curve Visibility Toggle Chips Bar */}
