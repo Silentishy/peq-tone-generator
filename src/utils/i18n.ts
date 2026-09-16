@@ -46,6 +46,16 @@ export interface Translations {
   equalLoudnessTooltip: string;
   pinnaGainNotice: string;
 
+  // 3-Point Q Finder (Step 1 - eqbyear method)
+  qFinderTitle: string;
+  qFinderSubtitle: string;
+  qFinderStart: string;
+  qFinderTop: string;
+  qFinderEnd: string;
+  qFinderReset: string;
+  qFinderApply: string;
+  qFinderSpan: string;
+
   // Fixer (Step 2)
   step2Title: string;
   step2Subtitle: string;
@@ -191,11 +201,18 @@ export interface Translations {
   shortcutSDesc: string;
   shortcutUndoDesc: string;
   shortcutRedoDesc: string;
+  shortcut1Desc: string;
+  shortcut2Desc: string;
+  shortcut3Desc: string;
   shortcutCloseBtn: string;
 
   // Feedback Toast
   toastUndo: string;
   toastRedo: string;
+  toastMarkedStart: string;
+  toastMarkedTop: string;
+  toastMarkedEnd: string;
+  toastAppliedQ: string;
 
   // Help Modal
   helpModalTitle: string;
@@ -260,6 +277,16 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     equalLoudnessOff: 'Loudness Comp OFF',
     equalLoudnessTooltip: 'Fletcher-Munson Equal-Loudness Normalization: Normalizes human ear sensitivity so tone sweep feels subjectively even in loudness',
     pinnaGainNotice: 'Note: Human ear canals naturally amplify 2.5k–4.5kHz by 6–10 dB. Only cut if it sounds screeching or noticeably louder than adjacent frequencies.',
+
+    // 3-Point Q Finder (Step 1 - eqbyear method)
+    qFinderTitle: '3-Point Q Finder (eqbyear method)',
+    qFinderSubtitle: 'Mark 1 (Start), 2 (Peak), 3 (End) to calculate exact Q',
+    qFinderStart: 'Start',
+    qFinderTop: 'Peak / Center',
+    qFinderEnd: 'End',
+    qFinderReset: 'Clear Marks',
+    qFinderApply: 'Use in Step 2',
+    qFinderSpan: 'Span',
 
     // Fixer
     step2Title: 'Step 2: Fix This Frequency',
@@ -406,11 +433,18 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shortcutSDesc: 'Toggle Auto-Scan frequency walker',
     shortcutUndoDesc: 'Undo the last EQ change (add, edit, delete, clear, or import)',
     shortcutRedoDesc: 'Redo the last undone EQ change',
+    shortcut1Desc: 'Mark peak/dip start frequency [1] for Q calculation',
+    shortcut2Desc: 'Mark peak/dip center frequency [2] for Q calculation',
+    shortcut3Desc: 'Mark peak/dip end frequency [3] for Q calculation',
     shortcutCloseBtn: 'Close',
 
     // Feedback Toast
     toastUndo: 'Undid EQ change',
     toastRedo: 'Redid EQ change',
+    toastMarkedStart: 'Marked Start at',
+    toastMarkedTop: 'Marked Peak at',
+    toastMarkedEnd: 'Marked End at',
+    toastAppliedQ: 'Applied to Step 2',
 
     // Help Modal
     helpModalTitle: 'How to Fix Headphone & Speaker Sound',
@@ -474,6 +508,16 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     equalLoudnessOff: '等响度补偿：关闭',
     equalLoudnessTooltip: '等响度曲线补偿：人耳对 3-4kHz 极敏感，对低频和极高频迟钝。开启后动态加权纯音响度，让扫频听感平直，真实硬件峰值更易暴露',
     pinnaGainNotice: '提示：人耳耳道天生会对 2.5k–4.5kHz 放大 6–10 dB (耳廓增益)。只有该处明显炸耳、比临近频段突兀刺痛时才需削减。',
+
+    // 3-Point Q Finder (Step 1 - eqbyear method)
+    qFinderTitle: '三点式 Q 值测算 (eqbyear 算法)',
+    qFinderSubtitle: '分别标记 1 (起)、2 (峰)、3 (止) 精准测算 Q 值',
+    qFinderStart: '起始点',
+    qFinderTop: '最高尖峰',
+    qFinderEnd: '结束点',
+    qFinderReset: '清空标记',
+    qFinderApply: '载入步骤 2',
+    qFinderSpan: '频宽',
 
     // Fixer
     step2Title: '步骤 2：针对当前频点进行微调',
@@ -620,11 +664,18 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shortcutSDesc: '开启 / 暂停自动频段扫描',
     shortcutUndoDesc: '撤销上一次 EQ 修改（新增、调整、删除、清空或导入）',
     shortcutRedoDesc: '重做上一次已撤销的 EQ 修改',
+    shortcut1Desc: '标记尖峰/凹陷的起始频率 [1] (用于测算 Q 值)',
+    shortcut2Desc: '标记尖峰/凹陷的最高中心点 [2] (用于测算 Q 值)',
+    shortcut3Desc: '标记尖峰/凹陷的结束恢复点 [3] (用于测算 Q 值)',
     shortcutCloseBtn: '我知道了',
 
     // Feedback Toast
     toastUndo: '已撤销 EQ 修改',
     toastRedo: '已重做 EQ 修改',
+    toastMarkedStart: '已标记起始点：',
+    toastMarkedTop: '已标记尖峰点：',
+    toastMarkedEnd: '已标记结束点：',
+    toastAppliedQ: '已载入步骤 2：',
 
     // Help Modal
     helpModalTitle: '耳机与音箱 EQ 调音入门指南',

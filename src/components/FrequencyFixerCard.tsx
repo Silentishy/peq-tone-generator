@@ -8,6 +8,7 @@ import {
   Sparkles,
   Waves,
   Activity,
+  Target,
 } from 'lucide-react';
 import { EQFix, FilterType, FilterWidth } from '../types/audio';
 import { WIDTH_MAP, MIN_GAIN, MAX_GAIN } from '../utils/eqMath';
@@ -22,6 +23,7 @@ interface FrequencyFixerCardProps {
   onSelectFrequency?: (freq: number) => void;
   isAudioRunning: boolean;
   onStartAudio: () => void;
+  suggestedQ?: number | null;
 }
 
 function getWidthFromQ(q: number): FilterWidth {
@@ -39,6 +41,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
   onSelectFrequency,
   isAudioRunning,
   onStartAudio,
+  suggestedQ,
 }) => {
   const { t, lang } = useLanguage();
   // Check if there is an existing fix close to this frequency (within 3.5% tolerance)
@@ -48,20 +51,22 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
 
   const [gain, setGain] = React.useState<number>(existingFix ? existingFix.gain : -3.0);
   const [filterType, setFilterType] = React.useState<FilterType>(existingFix?.filterType || 'peaking');
-  const [qVal, setQVal] = React.useState<number>(existingFix ? existingFix.q : 1.41);
+  const [qVal, setQVal] = React.useState<number>(
+    suggestedQ || existingFix?.q || (existingFix?.filterType === 'lowshelf' ? 0.71 : 1.41)
+  );
 
-  // Synchronize state when moving to a frequency that already has a fix
+  // Synchronize state when moving to a frequency that already has a fix, or when suggestedQ is provided
   React.useEffect(() => {
     if (existingFix) {
       setGain(existingFix.gain);
       setFilterType(existingFix.filterType || 'peaking');
-      setQVal(existingFix.q || (existingFix.filterType === 'lowshelf' ? 0.71 : 1.41));
+      setQVal(suggestedQ || existingFix.q || (existingFix.filterType === 'lowshelf' ? 0.71 : 1.41));
     } else {
       setGain(-3.0);
       setFilterType('peaking');
-      setQVal(1.41);
+      setQVal(suggestedQ || 1.41);
     }
-  }, [existingFix, currentFreq]);
+  }, [existingFix, currentFreq, suggestedQ]);
 
   // Live update if editing existing fix - preserves qVal
   const handleGainChange = (newGain: number) => {
@@ -198,6 +203,11 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
             <CheckCircle2 className="w-3.5 h-3.5" />
             {existingFix.filterType === 'lowshelf' ? t.bassShelfBadge : t.fixActive}: {existingFix.gain >= 0 ? `+${existingFix.gain}` : existingFix.gain} dB (Q: {existingFix.q.toFixed(2)})
           </span>
+        ) : suggestedQ != null ? (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1 border bg-cyan-500/15 border-cyan-400/50 text-cyan-300 shadow-sm animate-pulse">
+            <Target className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Q: {suggestedQ.toFixed(2)} ({lang === 'zh' ? '三点测算' : '3-Point Measured'})</span>
+          </span>
         ) : (
           <span className="text-xs text-slate-400">
             {t.step2Subtitle}
@@ -250,7 +260,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {/* Too Loud (Peak Cut) */}
         <button
-          onClick={() => handleApplyFix(-3.5, isShelf ? 0.71 : 4.5, filterType)}
+          onClick={() => handleApplyFix(-3.5, isShelf ? 0.71 : (suggestedQ ? qVal : 4.5), filterType)}
           className={`flex items-center justify-center space-x-2 p-3 rounded-xl border text-xs font-bold transition shadow active:scale-95 ${
             existingFix && existingFix.gain < 0
               ? 'bg-rose-500/20 border-rose-500 text-rose-200 ring-2 ring-rose-500/40'
@@ -263,7 +273,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
 
         {/* Too Quiet (Dip Boost) */}
         <button
-          onClick={() => handleApplyFix(3.0, isShelf ? 0.71 : 1.41, filterType)}
+          onClick={() => handleApplyFix(3.0, isShelf ? 0.71 : (suggestedQ ? qVal : 1.41), filterType)}
           className={`flex items-center justify-center space-x-2 p-3 rounded-xl border text-xs font-bold transition shadow active:scale-95 ${
             existingFix && existingFix.gain > 0
               ? 'bg-sky-500/20 border-sky-500 text-sky-200 ring-2 ring-sky-500/40'

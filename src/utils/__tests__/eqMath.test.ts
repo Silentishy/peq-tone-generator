@@ -21,6 +21,7 @@ import {
   exportToWavelet,
   exportToTable,
   importFromEqualizerAPO,
+  calculateQFromMarks,
 } from '../eqMath';
 import { EQFix } from '../../types/audio';
 
@@ -495,5 +496,54 @@ describe('importFromEqualizerAPO', () => {
       expect(parsed.fixes[0]).toMatchObject({ filterType: 'lowshelf', q: 0.71 });
       expect(parsed.fixes[1]).toMatchObject({ filterType: 'peaking', q: 4.5 });
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3-Point Mark-to-Q Calculation (eqbyear method)
+// ---------------------------------------------------------------------------
+
+describe('calculateQFromMarks', () => {
+  it('returns null if neither top nor both start+end are provided', () => {
+    expect(calculateQFromMarks({})).toBeNull();
+    expect(calculateQFromMarks({ start: 1000 })).toBeNull();
+    expect(calculateQFromMarks({ end: 2000 })).toBeNull();
+  });
+
+  it('calculates exact Q from 3 marks (start, top, end)', () => {
+    // Fc = 6200 Hz, Start = 5800 Hz, End = 6800 Hz => span = 1000 Hz, Q = 6.20
+    const res = calculateQFromMarks({ start: 5800, top: 6200, end: 6800 });
+    expect(res).not.toBeNull();
+    expect(res!.fc).toBe(6200);
+    expect(res!.span).toBe(1000);
+    expect(res!.q).toBe(6.2);
+  });
+
+  it('calculates geometric center when top is omitted', () => {
+    // Start = 500, End = 2000 => Fc = sqrt(1,000,000) = 1000, span = 1500, Q = 1000 / 1500 = 0.67
+    const res = calculateQFromMarks({ start: 500, end: 2000 });
+    expect(res).not.toBeNull();
+    expect(res!.fc).toBe(1000);
+    expect(res!.span).toBe(1500);
+    expect(res!.q).toBe(0.67);
+  });
+
+  it('estimates symmetric span when top and one boundary are marked', () => {
+    // Top = 1000, Start = 800 => one-sided = 200, estimated span = 400, Q = 1000 / 400 = 2.50
+    const res = calculateQFromMarks({ top: 1000, start: 800 });
+    expect(res).not.toBeNull();
+    expect(res!.fc).toBe(1000);
+    expect(res!.span).toBe(400);
+    expect(res!.q).toBe(2.5);
+  });
+
+  it('clamps Q into safe audio limits [0.2, 20.0]', () => {
+    // Extreme wide
+    const wide = calculateQFromMarks({ top: 50, start: 20, end: 20000 });
+    expect(wide!.q).toBeGreaterThanOrEqual(0.2);
+
+    // Extreme narrow
+    const narrow = calculateQFromMarks({ top: 10000, start: 9999, end: 10001 });
+    expect(narrow!.q).toBeLessThanOrEqual(20.0);
   });
 });

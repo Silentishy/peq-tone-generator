@@ -11,7 +11,7 @@ import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { GitHubIcon } from './components/GitHubIcon';
 import { AudioEngine, MusicState } from './audio/AudioEngine';
 import { BenchmarkTrackId, EQFix, EQProfile, ToneMode } from './types/audio';
-import { calculateHeadroom } from './utils/eqMath';
+import { calculateHeadroom, QMarkState, calculateQFromMarks, formatFreq } from './utils/eqMath';
 import { useLanguage } from './context/LanguageContext';
 
 const PROFILES_STORAGE_KEY = 'peq_profiles_v2';
@@ -141,6 +141,45 @@ export const App: React.FC = () => {
       setToastMessage(null);
     }, 2200);
   }, []);
+
+  // 3-Point Q Measurement State (eqbyear method)
+  const [qMarks, setQMarks] = useState<QMarkState>({});
+  const [suggestedQ, setSuggestedQ] = useState<number | null>(null);
+
+  const handleSetQMark = useCallback(
+    (which: 'start' | 'top' | 'end') => {
+      setQMarks((prev) => {
+        const next = { ...prev, [which]: frequency };
+        const freqLabel = formatFreq(frequency);
+        if (which === 'start') showToast(`${t.toastMarkedStart} ${freqLabel}`);
+        else if (which === 'top') showToast(`${t.toastMarkedTop} ${freqLabel}`);
+        else if (which === 'end') showToast(`${t.toastMarkedEnd} ${freqLabel}`);
+        return next;
+      });
+    },
+    [frequency, showToast, t]
+  );
+
+  const handleClearQMarks = useCallback(() => {
+    setQMarks({});
+  }, []);
+
+  const handleApplyQMarksToStep2 = useCallback(
+    (fc: number, q: number) => {
+      handleChangeFrequency(fc);
+      setSuggestedQ(q);
+      showToast(`${t.toastAppliedQ} ${formatFreq(fc)} (Q: ${q.toFixed(2)})`);
+      const fixerEl = document.getElementById('step-2-fixer');
+      if (fixerEl) {
+        fixerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        fixerEl.classList.add('ring-2', 'ring-cyan-400');
+        setTimeout(() => {
+          fixerEl.classList.remove('ring-2', 'ring-cyan-400');
+        }, 1500);
+      }
+    },
+    [showToast, t]
+  );
 
   // Save Profiles to localStorage
   useEffect(() => {
@@ -494,6 +533,26 @@ export const App: React.FC = () => {
       } else if (isMod && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault();
         handleUndo();
+      } else if (e.key === '1') {
+        e.preventDefault();
+        handleSetQMark('start');
+      } else if (e.key === '2') {
+        e.preventDefault();
+        handleSetQMark('top');
+      } else if (e.key === '3') {
+        e.preventDefault();
+        handleSetQMark('end');
+      } else if (e.key === 'Escape') {
+        if (qMarks.start != null || qMarks.top != null || qMarks.end != null) {
+          e.preventDefault();
+          handleClearQMarks();
+        }
+      } else if (e.key === 'Enter') {
+        const res = calculateQFromMarks(qMarks);
+        if (res) {
+          e.preventDefault();
+          handleApplyQMarksToStep2(res.fc, res.q);
+        }
       } else if (e.code === 'Space') {
         e.preventDefault();
         if (musicState.isLoaded) {
@@ -547,6 +606,10 @@ export const App: React.FC = () => {
     handleUpdateFix,
     handleUndo,
     handleRedo,
+    qMarks,
+    handleSetQMark,
+    handleClearQMarks,
+    handleApplyQMarksToStep2,
   ]);
 
   return (
@@ -592,6 +655,10 @@ export const App: React.FC = () => {
                 onSelectToneMode={handleSelectToneMode}
                 isEqualLoudness={isEqualLoudness}
                 onToggleEqualLoudness={handleToggleEqualLoudness}
+                qMarks={qMarks}
+                onSetMark={handleSetQMark}
+                onClearMarks={handleClearQMarks}
+                onApplyQMarksToStep2={handleApplyQMarksToStep2}
               />
             </section>
 
@@ -606,6 +673,7 @@ export const App: React.FC = () => {
                 onSelectFrequency={handleChangeFrequency}
                 isAudioRunning={isAudioRunning}
                 onStartAudio={handleToggleAudio}
+                suggestedQ={suggestedQ}
               />
             </section>
 

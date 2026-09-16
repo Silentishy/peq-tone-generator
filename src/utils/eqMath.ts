@@ -551,3 +551,60 @@ export function importFromEqualizerAPO(text: string): { fixes: Partial<EQFix>[];
 
   return { fixes, preamp: parsedPreamp };
 }
+
+/**
+ * 3-Point Mark-to-Q calculation (eqbyear method)
+ * Marks:
+ *   - start (1): frequency where peak/dip starts
+ *   - top (2): center frequency where peak/dip is loudest
+ *   - end (3): frequency where peak/dip ends
+ * Formulas:
+ *   fc = top ?? sqrt(start * end)
+ *   q = fc / |end - start|
+ */
+export interface QMarkState {
+  start?: number;
+  top?: number;
+  end?: number;
+}
+
+export interface QMarkResult {
+  fc: number;
+  q: number;
+  span: number;
+}
+
+export function calculateQFromMarks(marks: QMarkState): QMarkResult | null {
+  const { start, top, end } = marks;
+  let fc: number;
+  if (top != null && top > 0) {
+    fc = top;
+  } else if (start != null && end != null && start > 0 && end > 0) {
+    fc = Math.sqrt(start * end);
+  } else {
+    return null;
+  }
+
+  let span = 0;
+  let q = 1.41;
+
+  if (start != null && end != null && Math.abs(end - start) > 0) {
+    span = Math.abs(end - start);
+    q = fc / span;
+  } else if (start != null && top != null && Math.abs(top - start) > 0) {
+    span = Math.abs(top - start) * 2;
+    q = fc / span;
+  } else if (end != null && top != null && Math.abs(end - top) > 0) {
+    span = Math.abs(end - top) * 2;
+    q = fc / span;
+  }
+
+  q = Math.min(20, Math.max(0.2, q));
+  q = Math.round(q * 100) / 100;
+
+  return {
+    fc: Math.round(Math.max(MIN_FREQ, Math.min(MAX_FREQ, fc))),
+    q,
+    span: Math.round(span),
+  };
+}

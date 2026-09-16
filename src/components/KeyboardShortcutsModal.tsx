@@ -46,6 +46,11 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
       tag: 'Auto-Scan',
     },
     {
+      keys: ['1', '2', '3'],
+      desc: lang === 'zh' ? '标记起始点[1]、尖峰[2]、结束点[3] (三点测Q值)' : 'Mark Start [1], Peak [2], End [3] (3-Point Q)',
+      tag: 'Q Finder',
+    },
+    {
       keys: ['Ctrl / ⌘', 'Z'],
       desc: t.shortcutUndoDesc,
       tag: 'Undo',
