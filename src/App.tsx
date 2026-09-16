@@ -145,41 +145,53 @@ export const App: React.FC = () => {
   // 3-Point Q Measurement State (eqbyear method)
   const [qMarks, setQMarks] = useState<QMarkState>({});
   const [suggestedQ, setSuggestedQ] = useState<number | null>(null);
+  const frequencyRef = useRef<number>(frequency);
+  useEffect(() => {
+    frequencyRef.current = frequency;
+  }, [frequency]);
+
+  const markedCount = (qMarks.start != null ? 1 : 0) + (qMarks.top != null ? 1 : 0) + (qMarks.end != null ? 1 : 0);
+  const is3PointInProgress = markedCount > 0 && markedCount < 3;
 
   const handleSetQMark = useCallback(
-    (which: 'start' | 'top' | 'end') => {
+    (which: 'start' | 'top' | 'end', freqOverride?: number) => {
+      const f = freqOverride ?? frequencyRef.current;
       setQMarks((prev) => {
-        const next = { ...prev, [which]: frequency };
-        const freqLabel = formatFreq(frequency);
+        const next = { ...prev, [which]: f };
+        const freqLabel = formatFreq(f);
         if (which === 'start') showToast(`${t.toastMarkedStart} ${freqLabel}`);
         else if (which === 'top') showToast(`${t.toastMarkedTop} ${freqLabel}`);
         else if (which === 'end') showToast(`${t.toastMarkedEnd} ${freqLabel}`);
         return next;
       });
     },
-    [frequency, showToast, t]
+    [showToast, t]
   );
 
   const handleClearQMarks = useCallback(() => {
     setQMarks({});
+    setSuggestedQ(null);
   }, []);
 
-  const handleApplyQMarksToStep2 = useCallback(
-    (fc: number, q: number) => {
-      handleChangeFrequency(fc);
-      setSuggestedQ(q);
-      showToast(`${t.toastAppliedQ} ${formatFreq(fc)} (Q: ${q.toFixed(2)})`);
-      const fixerEl = document.getElementById('step-2-fixer');
-      if (fixerEl) {
-        fixerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        fixerEl.classList.add('ring-2', 'ring-cyan-400');
-        setTimeout(() => {
-          fixerEl.classList.remove('ring-2', 'ring-cyan-400');
-        }, 1500);
+  // When all 3 marks are filled, automatically calculate Q and fc, sync to Step 2, and unlock Step 2
+  useEffect(() => {
+    if (qMarks.start != null && qMarks.top != null && qMarks.end != null) {
+      const res = calculateQFromMarks(qMarks);
+      if (res) {
+        handleChangeFrequency(res.fc);
+        setSuggestedQ(res.q);
+        showToast(`${t.qFinderReady} ${res.q.toFixed(2)}`);
+        const fixerEl = document.getElementById('step-2-fixer');
+        if (fixerEl) {
+          fixerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          fixerEl.classList.add('ring-2', 'ring-cyan-400');
+          setTimeout(() => {
+            fixerEl.classList.remove('ring-2', 'ring-cyan-400');
+          }, 1500);
+        }
       }
-    },
-    [showToast, t]
-  );
+    }
+  }, [qMarks, showToast, t]);
 
   // Save Profiles to localStorage
   useEffect(() => {
@@ -405,6 +417,8 @@ export const App: React.FC = () => {
     };
     const updated = [...fixes, newFix];
     updateActiveProfileFixes(updated);
+    setQMarks({});
+    setSuggestedQ(null);
   };
 
   const handleUpdateFix = useCallback(
@@ -418,6 +432,13 @@ export const App: React.FC = () => {
         )
       );
       engine.updateLiveFix(updatedFix);
+      setQMarks((prev) => {
+        if (prev.start != null || prev.top != null || prev.end != null) {
+          return {};
+        }
+        return prev;
+      });
+      setSuggestedQ(null);
     },
     [activeProfileId, engine, pushUndoSnapshot]
   );
@@ -547,12 +568,6 @@ export const App: React.FC = () => {
           e.preventDefault();
           handleClearQMarks();
         }
-      } else if (e.key === 'Enter') {
-        const res = calculateQFromMarks(qMarks);
-        if (res) {
-          e.preventDefault();
-          handleApplyQMarksToStep2(res.fc, res.q);
-        }
       } else if (e.code === 'Space') {
         e.preventDefault();
         if (musicState.isLoaded) {
@@ -609,7 +624,6 @@ export const App: React.FC = () => {
     qMarks,
     handleSetQMark,
     handleClearQMarks,
-    handleApplyQMarksToStep2,
   ]);
 
   return (
@@ -658,7 +672,6 @@ export const App: React.FC = () => {
                 qMarks={qMarks}
                 onSetMark={handleSetQMark}
                 onClearMarks={handleClearQMarks}
-                onApplyQMarksToStep2={handleApplyQMarksToStep2}
               />
             </section>
 
@@ -674,6 +687,9 @@ export const App: React.FC = () => {
                 isAudioRunning={isAudioRunning}
                 onStartAudio={handleToggleAudio}
                 suggestedQ={suggestedQ}
+                isLocked={is3PointInProgress}
+                markedCount={markedCount}
+                onClearMarks={handleClearQMarks}
               />
             </section>
 

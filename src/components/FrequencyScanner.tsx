@@ -14,7 +14,6 @@ import {
   Target,
   ChevronDown,
   RotateCcw,
-  ArrowRight,
 } from 'lucide-react';
 import {
   getFrequencyZone,
@@ -40,9 +39,8 @@ interface FrequencyScannerProps {
   isEqualLoudness: boolean;
   onToggleEqualLoudness: () => void;
   qMarks: QMarkState;
-  onSetMark: (which: 'start' | 'top' | 'end') => void;
+  onSetMark: (which: 'start' | 'top' | 'end', freq?: number) => void;
   onClearMarks: () => void;
-  onApplyQMarksToStep2: (fc: number, q: number) => void;
 }
 
 type CategorySection = 'bass' | 'mids' | 'treble' | 'air';
@@ -61,7 +59,6 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
   qMarks,
   onSetMark,
   onClearMarks,
-  onApplyQMarksToStep2,
 }) => {
   const { t, lang } = useLanguage();
   const currentZone = getFrequencyZone(frequency);
@@ -361,7 +358,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
               {/* Mark 1: Start */}
               <button
                 type="button"
-                onClick={() => onSetMark('start')}
+                onClick={() => onSetMark('start', frequency)}
                 className={`p-2 rounded-xl border text-left transition flex flex-col justify-between active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none ${
                   qMarks.start != null
                     ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-200 shadow-sm'
@@ -383,7 +380,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
               {/* Mark 2: Top / Peak */}
               <button
                 type="button"
-                onClick={() => onSetMark('top')}
+                onClick={() => onSetMark('top', frequency)}
                 className={`p-2 rounded-xl border text-left transition flex flex-col justify-between active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none ${
                   qMarks.top != null
                     ? 'bg-amber-500/15 border-amber-500/50 text-amber-200 shadow-sm'
@@ -405,7 +402,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
               {/* Mark 3: End */}
               <button
                 type="button"
-                onClick={() => onSetMark('end')}
+                onClick={() => onSetMark('end', frequency)}
                 className={`p-2 rounded-xl border text-left transition flex flex-col justify-between active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none ${
                   qMarks.end != null
                     ? 'bg-purple-500/15 border-purple-500/50 text-purple-200 shadow-sm'
@@ -425,7 +422,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
               </button>
             </div>
 
-            {/* Calculated Result Banner & Apply Button */}
+            {/* Calculated Result Banner (Automatic hand-off to Step 2) */}
             {calculatedResult && (
               <div className="flex flex-wrap items-center justify-between gap-2 bg-studio-panel p-2.5 rounded-xl border border-cyan-500/40 shadow-sm mt-0.5 animate-fade-in">
                 <div className="flex items-center flex-wrap gap-2 text-xs font-mono">
@@ -442,14 +439,10 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => onApplyQMarksToStep2(calculatedResult.fc, calculatedResult.q)}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold rounded-lg text-xs shadow-md transition active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
-                >
-                  <span>{t.qFinderApply}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center space-x-1.5 text-xs text-cyan-300 font-mono">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className="text-[11px] font-semibold">{lang === 'zh' ? '已自动同步至步骤 2' : 'Synced to Step 2'}</span>
+                </div>
               </div>
             )}
           </div>

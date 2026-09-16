@@ -9,6 +9,7 @@ import {
   Waves,
   Activity,
   Target,
+  Lock,
 } from 'lucide-react';
 import { EQFix, FilterType, FilterWidth } from '../types/audio';
 import { WIDTH_MAP, MIN_GAIN, MAX_GAIN } from '../utils/eqMath';
@@ -24,6 +25,9 @@ interface FrequencyFixerCardProps {
   isAudioRunning: boolean;
   onStartAudio: () => void;
   suggestedQ?: number | null;
+  isLocked?: boolean;
+  markedCount?: number;
+  onClearMarks?: () => void;
 }
 
 function getWidthFromQ(q: number): FilterWidth {
@@ -42,6 +46,9 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
   isAudioRunning,
   onStartAudio,
   suggestedQ,
+  isLocked = false,
+  markedCount = 0,
+  onClearMarks,
 }) => {
   const { t, lang } = useLanguage();
   // Check if there is an existing fix close to this frequency (within 3.5% tolerance)
@@ -203,6 +210,11 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
             <CheckCircle2 className="w-3.5 h-3.5" />
             {existingFix.filterType === 'lowshelf' ? t.bassShelfBadge : t.fixActive}: {existingFix.gain >= 0 ? `+${existingFix.gain}` : existingFix.gain} dB (Q: {existingFix.q.toFixed(2)})
           </span>
+        ) : isLocked ? (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1 border bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-sm animate-pulse">
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
+            <span>{lang === 'zh' ? `测算中 (${markedCount}/3)` : `Measuring (${markedCount}/3)`}</span>
+          </span>
         ) : suggestedQ != null ? (
           <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1 border bg-cyan-500/15 border-cyan-400/50 text-cyan-300 shadow-sm animate-pulse">
             <Target className="w-3.5 h-3.5 text-cyan-400" />
@@ -215,7 +227,34 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
         )}
       </div>
 
-      {/* Filter Shape & Preset Row */}
+      {/* 3-Point In-Progress Locking Banner */}
+      {isLocked && (
+        <div className="bg-amber-950/25 border border-amber-500/40 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs text-amber-200 animate-fade-in shadow-inner">
+          <div className="flex items-center space-x-2.5 min-w-0">
+            <Lock className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <div>
+              <h4 className="font-bold text-amber-300">
+                {t.qFinderLockedTitle.replace('{count}', String(markedCount))}
+              </h4>
+              <p className="text-[11px] text-amber-300/80 mt-0.5 leading-snug">
+                {t.qFinderLockedDesc}
+              </p>
+            </div>
+          </div>
+          {onClearMarks && (
+            <button
+              type="button"
+              onClick={onClearMarks}
+              className="px-2.5 py-1 rounded-lg bg-studio-panel hover:bg-slate-700 text-slate-300 border border-studio-border text-xs font-mono transition flex-shrink-0 active:scale-95 self-end sm:self-center"
+            >
+              {t.qFinderReset}
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className={`flex flex-col gap-4 transition-opacity duration-200 ${isLocked ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+        {/* Filter Shape & Preset Row */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-studio-surface/80 p-2.5 rounded-xl border border-studio-border/70">
         <div className="flex items-center space-x-2">
           <span className="text-xs font-semibold text-slate-300">
@@ -555,6 +594,7 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

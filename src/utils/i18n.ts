@@ -55,6 +55,9 @@ export interface Translations {
   qFinderReset: string;
   qFinderApply: string;
   qFinderSpan: string;
+  qFinderLockedTitle: string;
+  qFinderLockedDesc: string;
+  qFinderReady: string;
 
   // Fixer (Step 2)
   step2Title: string;
@@ -287,6 +290,9 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     qFinderReset: 'Clear Marks',
     qFinderApply: 'Use in Step 2',
     qFinderSpan: 'Span',
+    qFinderLockedTitle: '3-Point Q Finder in progress ({count}/3 marked)',
+    qFinderLockedDesc: 'Complete all 3 marks (1. Start, 2. Peak, 3. End) in Step 1 to unlock Step 2, or clear marks to cancel.',
+    qFinderReady: '3-point marks complete! Unlocked Step 2 with Q =',
 
     // Fixer
     step2Title: 'Step 2: Fix This Frequency',
@@ -518,6 +524,9 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     qFinderReset: '清空标记',
     qFinderApply: '载入步骤 2',
     qFinderSpan: '频宽',
+    qFinderLockedTitle: '三点式 Q 值测算进行中 (已标记 {count}/3)',
+    qFinderLockedDesc: '请在步骤 1 中完成全部 3 个标记 (1. 起始, 2. 尖峰, 3. 结束) 以解锁步骤 2，或点击清空取消。',
+    qFinderReady: '三点标记已集齐！步骤 2 已解锁，测算 Q =',
 
     // Fixer
     step2Title: '步骤 2：针对当前频点进行微调',
