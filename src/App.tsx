@@ -706,6 +706,7 @@ export const App: React.FC = () => {
                 isAudioRunning={isAudioRunning}
                 effectivePreamp={effectivePreamp}
                 isBypassed={isBypassed}
+                qMarks={qMarks}
               />
             </section>
 

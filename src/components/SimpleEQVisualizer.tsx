@@ -20,6 +20,8 @@ import {
   MAX_GAIN,
   WIDTH_MAP,
   calculateCombinedFilterResponse,
+  QMarkState,
+  formatFreq,
 } from '../utils/eqMath';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -31,6 +33,7 @@ interface SimpleEQVisualizerProps {
   isAudioRunning: boolean;
   effectivePreamp?: number;
   isBypassed?: boolean;
+  qMarks?: QMarkState;
 }
 
 // 7 precision stages for vertical dB scale: ±3 dB to ±24 dB
@@ -44,6 +47,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   isAudioRunning,
   effectivePreamp = 0,
   isBypassed = false,
+  qMarks,
 }) => {
   const { t, lang } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -68,6 +72,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
   const [showBaseline, setShowBaseline] = useState<boolean>(true);
   const [showRTA, setShowRTA] = useState<boolean>(true);
   const [showNodes, setShowNodes] = useState<boolean>(true);
+  const [showQMarks, setShowQMarks] = useState<boolean>(true);
 
   // Interaction State: Dragging fix nodes or panning background
   const [draggingFixId, setDraggingFixId] = useState<string | null>(null);
@@ -474,6 +479,105 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
         });
       }
 
+      // 5.5. 3-Point Q Finder Marks (eqbyear method)
+      if (showQMarks && qMarks) {
+        const hasStart = qMarks.start != null && qMarks.start >= minFreq && qMarks.start <= maxFreq;
+        const hasTop = qMarks.top != null && qMarks.top >= minFreq && qMarks.top <= maxFreq;
+        const hasEnd = qMarks.end != null && qMarks.end >= minFreq && qMarks.end <= maxFreq;
+
+        // Bandwidth shading between start and end
+        if (qMarks.start != null && qMarks.end != null) {
+          const xS = freqToX(qMarks.start, width, minFreq, maxFreq);
+          const xE = freqToX(qMarks.end, width, minFreq, maxFreq);
+          const leftX = Math.min(xS, xE);
+          const spanW = Math.abs(xE - xS);
+
+          ctx.save();
+          ctx.fillStyle = 'rgba(6, 182, 212, 0.08)';
+          ctx.fillRect(leftX, 0, spanW, height);
+          ctx.strokeStyle = 'rgba(6, 182, 212, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 4]);
+          ctx.strokeRect(leftX, 0, spanW, height);
+          ctx.restore();
+        }
+
+        // Mark 1: Start (Emerald)
+        if (hasStart && qMarks.start != null) {
+          const x = freqToX(qMarks.start, width, minFreq, maxFreq);
+          ctx.save();
+          ctx.beginPath();
+          ctx.setLineDash([3, 3]);
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.strokeStyle = '#34d399';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#34d399';
+          ctx.beginPath();
+          ctx.roundRect(x - 22, height - 20, 44, 15, 3);
+          ctx.fill();
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`1 ${formatFreq(qMarks.start)}`, x, height - 12);
+          ctx.restore();
+        }
+
+        // Mark 2: Top / Peak (Amber)
+        if (hasTop && qMarks.top != null) {
+          const x = freqToX(qMarks.top, width, minFreq, maxFreq);
+          ctx.save();
+          ctx.beginPath();
+          ctx.setLineDash([3, 3]);
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.roundRect(x - 22, height - 20, 44, 15, 3);
+          ctx.fill();
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`2 ${formatFreq(qMarks.top)}`, x, height - 12);
+          ctx.restore();
+        }
+
+        // Mark 3: End (Purple)
+        if (hasEnd && qMarks.end != null) {
+          const x = freqToX(qMarks.end, width, minFreq, maxFreq);
+          ctx.save();
+          ctx.beginPath();
+          ctx.setLineDash([3, 3]);
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.strokeStyle = '#c084fc';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#c084fc';
+          ctx.beginPath();
+          ctx.roundRect(x - 22, height - 20, 44, 15, 3);
+          ctx.fill();
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`3 ${formatFreq(qMarks.end)}`, x, height - 12);
+          ctx.restore();
+        }
+      }
+
       // 6. Active Tone Marker (Vertical laser)
       if (currentFreq >= minFreq && currentFreq <= maxFreq) {
         const curX = freqToX(currentFreq, width, minFreq, maxFreq);
@@ -527,6 +631,8 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
     showBaseline,
     showRTA,
     showNodes,
+    showQMarks,
+    qMarks,
     getDynamicGridTicks,
   ]);
 
@@ -986,6 +1092,23 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
             {showNodes ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
             <span>{t.toggleCurveNodes}</span>
           </button>
+
+          {/* Toggle 3-Point Marks on Curve */}
+          {qMarks && (qMarks.start != null || qMarks.top != null || qMarks.end != null) && (
+            <button
+              type="button"
+              onClick={() => setShowQMarks((prev) => !prev)}
+              className={`px-2 py-0.5 rounded-lg border flex items-center gap-1 transition select-none ${
+                showQMarks
+                  ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold'
+                  : 'bg-studio-panel border-studio-border text-slate-500 line-through'
+              }`}
+              title="Toggle 3-Point Marks (1-2-3) on curve"
+            >
+              {showQMarks ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+              <span>{lang === 'zh' ? '三点标记 (1-2-3)' : '3-Point Marks'}</span>
+            </button>
+          )}
         </div>
 
         {/* Live dB Readout at cursor frequency */}

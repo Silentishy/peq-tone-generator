@@ -84,7 +84,7 @@ export class AudioEngine {
   public ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private preampGain: GainNode | null = null;
-  private limiter: DynamicsCompressorNode | null = null;
+  private limiter: WaveShaperNode | null = null;
   public analyser: AnalyserNode | null = null;
 
   // Dedicated stereo intermediate bus ensuring both ears get sound
@@ -98,6 +98,8 @@ export class AudioEngine {
   private noiseBandpassNode: BiquadFilterNode | null = null;
   private pinkNoiseBuffer: AudioBuffer | null = null;
   private toneCompensationGain: GainNode | null = null;
+  private toneFaderGain: GainNode | null = null;
+  private toneStopTimeoutId: number | null = null;
   private isEqualLoudnessEnabled: boolean = false;
 
   // Music audio player & benchmark tracks
@@ -148,13 +150,20 @@ export class AudioEngine {
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     this.ctx = new AudioContextClass();
 
-    // 1. Master Output with safety limiter to protect ears from loud peaks
-    this.limiter = this.ctx.createDynamicsCompressor();
-    this.limiter.threshold.setValueAtTime(-1.5, this.ctx.currentTime);
-    this.limiter.knee.setValueAtTime(6, this.ctx.currentTime);
-    this.limiter.ratio.setValueAtTime(12, this.ctx.currentTime);
-    this.limiter.attack.setValueAtTime(0.003, this.ctx.currentTime);
-    this.limiter.release.setValueAtTime(0.08, this.ctx.currentTime);
+    // 1. Master Output with transparent brickwall safety ceiling (-0.5 dBFS)
+    // Unlike dynamic compressors that introduce attack/release envelope pumping,
+    // a WaveShaper hard clipper is 100% linear across normal audio and only clamps
+    // extreme blasts to prevent digital wrap-around distortion and protect hearing.
+    const CEILING = 0.944; // -0.5 dBFS
+    const N = 4097;
+    const curve = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      const x = (i / (N - 1)) * 2 - 1;
+      curve[i] = Math.max(-CEILING, Math.min(CEILING, x));
+    }
+    this.limiter = this.ctx.createWaveShaper();
+    this.limiter.curve = curve;
+    this.limiter.oversample = 'none';
 
     this.preampGain = this.ctx.createGain();
     this.preampGain.gain.setValueAtTime(Math.pow(10, this.preampOffset / 20), this.ctx.currentTime);
@@ -183,6 +192,14 @@ export class AudioEngine {
     this.toneCompensationGain = this.ctx.createGain();
     this.toneCompensationGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
 
+    // Click-free tone fader: smoothly fades tone in and out over 15ms to prevent DC pops
+    this.toneFaderGain = this.ctx.createGain();
+    this.toneFaderGain.channelCount = 2;
+    this.toneFaderGain.channelCountMode = 'explicit';
+    this.toneFaderGain.channelInterpretation = 'speakers';
+    this.toneFaderGain.gain.setValueAtTime(0, this.ctx.currentTime);
+    this.toneFaderGain.connect(this.sourceGain);
+
     this.filterInputNode = this.ctx.createGain();
     this.filterInputNode.channelCount = 2;
     this.filterInputNode.channelCountMode = 'explicit';
@@ -193,13 +210,13 @@ export class AudioEngine {
     this.filterOutputNode.channelCountMode = 'explicit';
     this.filterOutputNode.channelInterpretation = 'speakers';
 
-    // Graph:
-    // [Sources] -> sourceGain -> filterInputNode -> [Filters] -> filterOutputNode -> stereoBus -> analyser -> preampGain -> masterGain -> limiter -> Speakers
-    this.sourceGain.connect(this.filterInputNode);
+    // Graph (Preamp placed BEFORE filters so boosting bands never clip internally):
+    // [Sources] -> sourceGain -> preampGain -> filterInputNode -> [Filters] -> filterOutputNode -> stereoBus -> analyser -> masterGain -> limiter -> Speakers
+    this.sourceGain.connect(this.preampGain);
+    this.preampGain.connect(this.filterInputNode);
     this.filterOutputNode.connect(this.stereoBus);
     this.stereoBus.connect(this.analyser);
-    this.analyser.connect(this.preampGain);
-    this.preampGain.connect(this.masterGain);
+    this.analyser.connect(this.masterGain);
     this.masterGain.connect(this.limiter);
     this.limiter.connect(this.ctx.destination);
 
@@ -270,9 +287,21 @@ export class AudioEngine {
       this.pauseMusic();
     }
 
+    if (this.toneStopTimeoutId) {
+      clearTimeout(this.toneStopTimeoutId);
+      this.toneStopTimeoutId = null;
+    }
+
     this.startToneSource();
     this.rebuildFilterChain(this.currentFixes);
     this.updateEqualLoudnessGain(false);
+
+    if (this.toneFaderGain) {
+      const now = this.ctx.currentTime;
+      this.toneFaderGain.gain.cancelScheduledValues(now);
+      this.toneFaderGain.gain.setValueAtTime(this.toneFaderGain.gain.value, now);
+      this.toneFaderGain.gain.linearRampToValueAtTime(1.0, now + 0.015);
+    }
 
     this.isRunning = true;
   }
@@ -281,8 +310,25 @@ export class AudioEngine {
     if (!this.ctx || !this.isRunning) return;
 
     this.stopAutoScan();
-    this.stopToneSource();
     this.isRunning = false;
+
+    if (this.toneFaderGain) {
+      const now = this.ctx.currentTime;
+      this.toneFaderGain.gain.cancelScheduledValues(now);
+      this.toneFaderGain.gain.setValueAtTime(this.toneFaderGain.gain.value, now);
+      this.toneFaderGain.gain.linearRampToValueAtTime(0, now + 0.015);
+
+      if (this.toneStopTimeoutId) {
+        clearTimeout(this.toneStopTimeoutId);
+      }
+      this.toneStopTimeoutId = window.setTimeout(() => {
+        if (!this.isRunning) {
+          this.stopToneSource();
+        }
+      }, 20);
+    } else {
+      this.stopToneSource();
+    }
   }
 
   public toggle(): Promise<void> | void {
@@ -318,6 +364,7 @@ export class AudioEngine {
     this.stopToneSource();
 
     const now = this.ctx.currentTime;
+    const destNode = this.toneFaderGain || this.sourceGain;
 
     if (this.toneMode === 'sine') {
       this.oscNode = this.ctx.createOscillator();
@@ -325,7 +372,7 @@ export class AudioEngine {
       this.oscNode.frequency.setValueAtTime(this.frequency, now);
 
       this.oscNode.connect(this.toneCompensationGain);
-      this.toneCompensationGain.connect(this.sourceGain);
+      this.toneCompensationGain.connect(destNode);
       this.oscNode.start(now);
     } else {
       // Narrowband Pink Noise Mode (ideal for room speakers without standing wave spikes)
@@ -341,7 +388,7 @@ export class AudioEngine {
 
         this.noiseSourceNode.connect(this.noiseBandpassNode);
         this.noiseBandpassNode.connect(this.toneCompensationGain);
-        this.toneCompensationGain.connect(this.sourceGain);
+        this.toneCompensationGain.connect(destNode);
         this.noiseSourceNode.start(now);
       }
     }

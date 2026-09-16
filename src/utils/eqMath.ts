@@ -73,12 +73,19 @@ export const FREQUENCY_LANDMARKS: FrequencyLandmark[] = [
   { name: '20 kHz Ceiling', nameZh: '20kHz 终点线', exactFreq: 20000, category: 'air', desc: 'Standard 20 kHz ceiling', descZh: '标准 20 kHz 声频天花板', color: '#fda4af' },
 ];
 
+export function clampFreq(freq: number): number {
+  if (!Number.isFinite(freq)) return 1000;
+  return Math.max(MIN_FREQ, Math.min(MAX_FREQ, freq));
+}
+
 export function formatFreq(freq: number): string {
-  if (freq >= 1000) {
-    const val = freq / 1000;
+  if (!Number.isFinite(freq)) return '1000 Hz';
+  const f = clampFreq(freq);
+  if (f >= 1000) {
+    const val = f / 1000;
     return `${val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)} kHz`;
   }
-  return `${Math.round(freq)} Hz`;
+  return `${Math.round(f)} Hz`;
 }
 
 export const FREQUENCY_ZONES: FrequencyZone[] = [
@@ -194,8 +201,8 @@ export function getFrequencyZone(freq: number): FrequencyZone {
  * Applying this inverted curve normalizes perceived loudness across the sweep.
  */
 export function calculateEqualLoudnessGain(freq: number): number {
-  if (freq <= 0) return 0;
-  const f = Math.max(MIN_FREQ, Math.min(MAX_FREQ, freq));
+  if (!Number.isFinite(freq) || freq <= 0) return 0;
+  const f = clampFreq(freq);
 
   // Piecewise interpolation approximating the 65-phon equal-loudness contour offset relative to 1 kHz
   const landmarks = [
@@ -255,11 +262,16 @@ export function freqToX(
   minFreq = MIN_FREQ,
   maxFreq = MAX_FREQ
 ): number {
-  const clamped = Math.max(minFreq, Math.min(maxFreq, freq));
-  const logMin = Math.log10(minFreq);
-  const logMax = Math.log10(maxFreq);
+  const safeW = Number.isFinite(width) && width > 0 ? width : 1000;
+  const safeMin = Number.isFinite(minFreq) && minFreq > 0 ? minFreq : MIN_FREQ;
+  const safeMax = Number.isFinite(maxFreq) && maxFreq > safeMin ? maxFreq : MAX_FREQ;
+  const safeFreq = Number.isFinite(freq) ? freq : safeMin;
+
+  const clamped = Math.max(safeMin, Math.min(safeMax, safeFreq));
+  const logMin = Math.log10(safeMin);
+  const logMax = Math.log10(safeMax);
   const logCurrent = Math.log10(clamped);
-  return ((logCurrent - logMin) / (logMax - logMin)) * width;
+  return ((logCurrent - logMin) / (logMax - logMin)) * safeW;
 }
 
 export function xToFreq(
@@ -268,23 +280,38 @@ export function xToFreq(
   minFreq = MIN_FREQ,
   maxFreq = MAX_FREQ
 ): number {
-  const clampedX = Math.max(0, Math.min(width, x));
-  const ratio = clampedX / width;
-  const logMin = Math.log10(minFreq);
-  const logMax = Math.log10(maxFreq);
+  const safeW = Number.isFinite(width) && width > 0 ? width : 1000;
+  const safeMin = Number.isFinite(minFreq) && minFreq > 0 ? minFreq : MIN_FREQ;
+  const safeMax = Number.isFinite(maxFreq) && maxFreq > safeMin ? maxFreq : MAX_FREQ;
+  const safeX = Number.isFinite(x) ? x : 0;
+
+  const clampedX = Math.max(0, Math.min(safeW, safeX));
+  const ratio = clampedX / safeW;
+  const logMin = Math.log10(safeMin);
+  const logMax = Math.log10(safeMax);
   return Math.pow(10, logMin + ratio * (logMax - logMin));
 }
 
 export function gainToY(gain: number, height: number, minGain = -15, maxGain = 15): number {
-  const clamped = Math.max(minGain, Math.min(maxGain, gain));
-  const ratio = (clamped - minGain) / (maxGain - minGain);
-  return height - ratio * height;
+  const safeH = Number.isFinite(height) && height > 0 ? height : 400;
+  const safeMin = Number.isFinite(minGain) ? minGain : -15;
+  const safeMax = Number.isFinite(maxGain) && maxGain > safeMin ? maxGain : 15;
+  const safeGain = Number.isFinite(gain) ? gain : 0;
+
+  const clamped = Math.max(safeMin, Math.min(safeMax, safeGain));
+  const ratio = (clamped - safeMin) / (safeMax - safeMin);
+  return safeH - ratio * safeH;
 }
 
 export function yToGain(y: number, height: number, minGain = -15, maxGain = 15): number {
-  const clampedY = Math.max(0, Math.min(height, y));
-  const ratio = 1 - clampedY / height;
-  return minGain + ratio * (maxGain - minGain);
+  const safeH = Number.isFinite(height) && height > 0 ? height : 400;
+  const safeMin = Number.isFinite(minGain) ? minGain : -15;
+  const safeMax = Number.isFinite(maxGain) && maxGain > safeMin ? maxGain : 15;
+  const safeY = Number.isFinite(y) ? y : safeH / 2;
+
+  const clampedY = Math.max(0, Math.min(safeH, safeY));
+  const ratio = 1 - clampedY / safeH;
+  return safeMin + ratio * (safeMax - safeMin);
 }
 
 /**
@@ -295,9 +322,11 @@ export function getBiquadFilterCoeffs(
   fix: EQFix,
   sampleRate = 48000
 ): { feedforward: number[]; feedback: number[] } {
-  const f0 = Math.max(MIN_FREQ, Math.min(MAX_FREQ, fix.frequency));
-  const gain = fix.gain;
-  const q = Math.max(0.1, fix.q || (fix.filterType === 'lowshelf' ? 0.71 : 1.41));
+  const f0 = clampFreq(fix.frequency);
+  const gain = Number.isFinite(fix.gain) ? fix.gain : 0;
+  const defaultQ = fix.filterType === 'lowshelf' ? 0.71 : 1.41;
+  const rawQ = Number.isFinite(fix.q) && fix.q > 0 ? fix.q : defaultQ;
+  const q = Math.max(0.1, Math.min(25.0, rawQ));
   const isShelf = fix.filterType === 'lowshelf';
 
   const A = Math.pow(10, gain / 40);

@@ -7,6 +7,7 @@ import {
   WIDTH_MAP,
   FREQUENCY_LANDMARKS,
   FREQUENCY_ZONES,
+  clampFreq,
   formatFreq,
   getFrequencyZone,
   calculateEqualLoudnessGain,
@@ -105,6 +106,20 @@ describe('FREQUENCY_ZONES', () => {
 // Formatting & zone lookup helpers
 // ---------------------------------------------------------------------------
 
+describe('clampFreq', () => {
+  it('clamps values outside audible boundaries', () => {
+    expect(clampFreq(5)).toBe(MIN_FREQ);
+    expect(clampFreq(50000)).toBe(MAX_FREQ);
+    expect(clampFreq(1000)).toBe(1000);
+  });
+
+  it('safely handles NaN and non-finite values by falling back to 1000 Hz', () => {
+    expect(clampFreq(NaN)).toBe(1000);
+    expect(clampFreq(Infinity)).toBe(1000);
+    expect(clampFreq(-Infinity)).toBe(1000);
+  });
+});
+
 describe('formatFreq', () => {
   it('formats sub-kHz frequencies in Hz', () => {
     expect(formatFreq(105)).toBe('105 Hz');
@@ -114,6 +129,10 @@ describe('formatFreq', () => {
   it('formats kHz values compactly', () => {
     expect(formatFreq(1000)).toBe('1 kHz');
     expect(formatFreq(6200)).toBe('6.2 kHz');
+  });
+
+  it('falls back safely when passed non-finite numbers', () => {
+    expect(formatFreq(NaN)).toBe('1000 Hz');
   });
 });
 
