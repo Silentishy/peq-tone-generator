@@ -387,8 +387,9 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
                 <button
                   type="button"
                   onClick={() => handleQChange(qVal - (isShelf ? 0.05 : 0.1))}
-                  className="px-1.5 py-0.5 rounded bg-studio-panel hover:bg-slate-700 text-slate-300 font-mono text-xs border border-studio-border active:scale-95"
+                  className="px-1.5 py-0.5 rounded bg-studio-panel hover:bg-slate-700 text-slate-300 font-mono text-xs border border-studio-border active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
                   title="Decrease Q by 0.1"
+                  aria-label="Decrease Q by 0.1"
                 >
                   -0.1
                 </button>
@@ -406,14 +407,16 @@ export const FrequencyFixerCard: React.FC<FrequencyFixerCardProps> = ({
                       if (!isNaN(val)) handleQChange(val);
                     }}
                     className="w-16 bg-transparent text-sm font-mono font-black text-cyan-300 focus:outline-none text-right"
+                    aria-label="Q factor value"
                   />
                 </div>
 
                 <button
                   type="button"
                   onClick={() => handleQChange(qVal + (isShelf ? 0.05 : 0.1))}
-                  className="px-1.5 py-0.5 rounded bg-studio-panel hover:bg-slate-700 text-slate-300 font-mono text-xs border border-studio-border active:scale-95"
+                  className="px-1.5 py-0.5 rounded bg-studio-panel hover:bg-slate-700 text-slate-300 font-mono text-xs border border-studio-border active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
                   title="Increase Q by 0.1"
+                  aria-label="Increase Q by 0.1"
                 >
                   +0.1
                 </button>

@@ -823,8 +823,9 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
           <button
             type="button"
             onClick={handleZoomReset}
-            className="p-1 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white transition active:scale-95"
+            className="p-1 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-white transition active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
             title={t.zoomReset}
+            aria-label={t.zoomReset}
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -861,8 +862,9 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
           <button
             type="button"
             onClick={handleZoomOut}
-            className="p-1.5 rounded-lg bg-studio-panel hover:bg-slate-700 border border-studio-border text-slate-300 hover:text-white transition active:scale-95 flex-shrink-0"
+            className="p-1.5 rounded-lg bg-studio-panel hover:bg-slate-700 border border-studio-border text-slate-300 hover:text-white transition active:scale-95 flex-shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
             title={t.zoomOut}
+            aria-label={t.zoomOut}
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
@@ -876,7 +878,8 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
               step="1"
               value={focusSliderVal}
               onChange={handleFocusSliderChange}
-              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
+              aria-label={t.freqFocusSliderLabel}
             />
             <div className="flex justify-between text-[9px] font-mono text-slate-500 px-0.5">
               <span>20 Hz</span>
@@ -890,8 +893,9 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
           <button
             type="button"
             onClick={handleZoomIn}
-            className="p-1.5 rounded-lg bg-studio-panel hover:bg-slate-700 border border-studio-border text-slate-300 hover:text-white transition active:scale-95 flex-shrink-0"
+            className="p-1.5 rounded-lg bg-studio-panel hover:bg-slate-700 border border-studio-border text-slate-300 hover:text-white transition active:scale-95 flex-shrink-0 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
             title={t.zoomIn}
+            aria-label={t.zoomIn}
           >
             <ZoomIn className="w-3.5 h-3.5" />
           </button>

@@ -16,6 +16,7 @@ import { useLanguage } from './context/LanguageContext';
 
 const PROFILES_STORAGE_KEY = 'peq_profiles_v2';
 const ACTIVE_PROFILE_KEY = 'peq_active_profile_v2';
+const SESSION_STORAGE_KEY = 'peq_session_v1';
 
 const DEFAULT_PROFILES: EQProfile[] = [
   { id: 'profile-default', name: 'Default Profile', nameZh: '默认设备配置', fixes: [], autoPreamp: true, preamp: 0 },
@@ -28,14 +29,58 @@ export const App: React.FC = () => {
   const { t, lang } = useLanguage();
   const engine = AudioEngine.getInstance();
 
-  // Audio Engine State
+  // Audio Engine State - initialized from persisted session settings with safe fallbacks
   const [isAudioRunning, setIsAudioRunning] = useState<boolean>(false);
-  const [volume, setVolume] = useState<number>(0.25);
+  const [volume, setVolume] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.volume === 'number' && parsed.volume >= 0 && parsed.volume <= 1) {
+          return parsed.volume;
+        }
+      }
+    } catch {}
+    return 0.25;
+  });
   const [isBypassed, setIsBypassed] = useState<boolean>(false);
-  const [frequency, setFrequency] = useState<number>(1000);
+  const [frequency, setFrequency] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.frequency === 'number' && parsed.frequency >= 20 && parsed.frequency <= 20000) {
+          return parsed.frequency;
+        }
+      }
+    } catch {}
+    return 1000;
+  });
   const [isAutoScanning, setIsAutoScanning] = useState<boolean>(false);
-  const [toneMode, setToneMode] = useState<ToneMode>('sine');
-  const [isEqualLoudness, setIsEqualLoudness] = useState<boolean>(false);
+  const [toneMode, setToneMode] = useState<ToneMode>(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.toneMode === 'sine' || parsed.toneMode === 'narrow_noise') {
+          return parsed.toneMode;
+        }
+      }
+    } catch {}
+    return 'sine';
+  });
+  const [isEqualLoudness, setIsEqualLoudness] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.isEqualLoudness === 'boolean') {
+          return parsed.isEqualLoudness;
+        }
+      }
+    } catch {}
+    return false;
+  });
 
   // Music Audition State
   const [musicState, setMusicState] = useState<MusicState>(() => engine.getMusicState());
@@ -74,16 +119,28 @@ export const App: React.FC = () => {
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
 
-  // Undo History (snapshots of the active profile's fixes & preamp)
+  // Undo & Redo History (snapshots of the active profile's fixes & preamp)
   interface UndoSnapshot {
     fixes: EQFix[];
     preamp?: number;
     autoPreamp?: boolean;
   }
   const [undoStack, setUndoStack] = useState<UndoSnapshot[]>([]);
+  const [redoStack, setRedoStack] = useState<UndoSnapshot[]>([]);
   const lastUndoPushRef = useRef<number>(0);
   const UNDO_COALESCE_MS = 700;
   const UNDO_MAX_DEPTH = 50;
+
+  // Ephemeral Feedback Toast
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = useCallback((msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastMessage(msg);
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 2200);
+  }, []);
 
   // Save Profiles to localStorage
   useEffect(() => {
@@ -92,6 +149,24 @@ export const App: React.FC = () => {
       localStorage.setItem(ACTIVE_PROFILE_KEY, activeProfileId);
     } catch {}
   }, [profiles, activeProfileId]);
+
+  // Save Session Settings to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        SESSION_STORAGE_KEY,
+        JSON.stringify({ volume, frequency, toneMode, isEqualLoudness })
+      );
+    } catch {}
+  }, [volume, frequency, toneMode, isEqualLoudness]);
+
+  // Sync Initial AudioEngine Settings on Mount
+  useEffect(() => {
+    engine.setVolume(volume);
+    engine.setFrequency(frequency);
+    engine.setToneMode(toneMode);
+    engine.setEqualLoudness(isEqualLoudness);
+  }, [engine]);
 
   // Sync Preamp to AudioEngine
   useEffect(() => {
@@ -118,6 +193,7 @@ export const App: React.FC = () => {
     if (id === activeProfileId) return;
     setActiveProfileId(id);
     setUndoStack([]);
+    setRedoStack([]);
     const target = profiles.find((p) => p.id === id);
     if (target) {
       engine.rebuildFilterChain(target.fixes);
@@ -136,6 +212,7 @@ export const App: React.FC = () => {
     setProfiles(updated);
     setActiveProfileId(newProfile.id);
     setUndoStack([]);
+    setRedoStack([]);
   };
 
   const handleRenameProfile = (id: string, newName: string) => {
@@ -151,6 +228,7 @@ export const App: React.FC = () => {
     if (activeProfileId === id) {
       setActiveProfileId(remaining[0].id);
       setUndoStack([]);
+      setRedoStack([]);
     }
   };
 
@@ -256,6 +334,7 @@ export const App: React.FC = () => {
   // dragging) into a single undo step.
   const pushUndoSnapshot = useCallback(
     (force = false) => {
+      setRedoStack([]); // Any new change clears redo history
       const now = Date.now();
       if (!force && now - lastUndoPushRef.current < UNDO_COALESCE_MS) {
         lastUndoPushRef.current = now;
@@ -363,6 +442,10 @@ export const App: React.FC = () => {
   const handleUndo = useCallback(() => {
     if (undoStack.length === 0) return;
     const last = undoStack[undoStack.length - 1];
+    setRedoStack((prev) => [
+      ...prev,
+      { fixes, preamp: activeProfile.preamp, autoPreamp: activeProfile.autoPreamp },
+    ]);
     setProfiles((prev) =>
       prev.map((p) =>
         p.id === activeProfileId
@@ -372,7 +455,28 @@ export const App: React.FC = () => {
     );
     setUndoStack((prev) => prev.slice(0, -1));
     lastUndoPushRef.current = 0;
-  }, [undoStack, activeProfileId]);
+    showToast(t.toastUndo);
+  }, [undoStack, activeProfileId, fixes, activeProfile, showToast, t]);
+
+  // Redo: reapply the most recently undone snapshot
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setUndoStack((prev) => [
+      ...prev,
+      { fixes, preamp: activeProfile.preamp, autoPreamp: activeProfile.autoPreamp },
+    ]);
+    setProfiles((prev) =>
+      prev.map((p) =>
+        p.id === activeProfileId
+          ? { ...p, fixes: next.fixes, preamp: next.preamp, autoPreamp: next.autoPreamp }
+          : p
+      )
+    );
+    setRedoStack((prev) => prev.slice(0, -1));
+    lastUndoPushRef.current = 0;
+    showToast(t.toastRedo);
+  }, [redoStack, activeProfileId, fixes, activeProfile, showToast, t]);
 
   // Keyboard Shortcuts Listener for Eyes-Closed Tuning
   useEffect(() => {
@@ -382,7 +486,12 @@ export const App: React.FC = () => {
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z')) {
+      const isMod = e.metaKey || e.ctrlKey;
+
+      if ((isMod && e.shiftKey && (e.key === 'z' || e.key === 'Z')) || (e.ctrlKey && (e.key === 'y' || e.key === 'Y'))) {
+        e.preventDefault();
+        handleRedo();
+      } else if (isMod && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault();
         handleUndo();
       } else if (e.code === 'Space') {
@@ -437,6 +546,7 @@ export const App: React.FC = () => {
     isAutoScanning,
     handleUpdateFix,
     handleUndo,
+    handleRedo,
   ]);
 
   return (
@@ -581,6 +691,16 @@ export const App: React.FC = () => {
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
       />
+
+      {/* Floating Ephemeral Feedback Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all animate-bounce-short">
+          <div className="bg-studio-panel/95 border border-cyan-400/60 text-cyan-200 text-xs font-mono font-medium px-4 py-2 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span>{toastMessage}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -311,32 +311,36 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
           <span className="text-slate-500 text-[11px] mr-1 hidden sm:inline">{t.fineTune}</span>
           <button
             onClick={() => nudge(-100)}
-            className="px-2 py-1 bg-studio-surface hover:bg-slate-700 border border-studio-border rounded-lg text-slate-300 active:scale-95"
+            className="px-2 py-1 bg-studio-surface hover:bg-slate-700 border border-studio-border rounded-lg text-slate-300 active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
             title="Step down 100 Hz"
+            aria-label="Step down 100 Hz"
           >
             <ChevronsLeft className="w-3.5 h-3.5 inline mr-0.5" />
             100
           </button>
           <button
             onClick={() => nudge(-10)}
-            className="px-2 py-1 bg-studio-surface hover:bg-slate-700 border border-studio-border rounded-lg text-slate-300 active:scale-95"
+            className="px-2 py-1 bg-studio-surface hover:bg-slate-700 border border-studio-border rounded-lg text-slate-300 active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
             title="Step down 10 Hz"
+            aria-label="Step down 10 Hz"
           >
             <ChevronLeft className="w-3.5 h-3.5 inline mr-0.5" />
             10
           </button>
           <button
             onClick={() => nudge(10)}
-            className="px-2 py-1 bg-studio-surface hover:bg-slate-700 border border-studio-border rounded-lg text-slate-300 active:scale-95"
+            className="px-2 py-1 bg-studio-surface hover:bg-slate-700 border border-studio-border rounded-lg text-slate-300 active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
             title="Step up 10 Hz"
+            aria-label="Step up 10 Hz"
           >
             +10
             <ChevronRight className="w-3.5 h-3.5 inline ml-0.5" />
           </button>
           <button
             onClick={() => nudge(100)}
-            className="px-2 py-1 bg-studio-surface hover:bg-slate-700 border border-studio-border rounded-lg text-slate-300 active:scale-95"
+            className="px-2 py-1 bg-studio-surface hover:bg-slate-700 border border-studio-border rounded-lg text-slate-300 active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
             title="Step up 100 Hz"
+            aria-label="Step up 100 Hz"
           >
             +100
             <ChevronsRight className="w-3.5 h-3.5 inline ml-0.5" />

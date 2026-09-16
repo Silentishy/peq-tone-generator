@@ -212,20 +212,22 @@ export const MusicAuditionCard: React.FC<MusicAuditionCardProps> = ({
               {!musicState.isBenchmark && (
                 <button
                   onClick={onRemoveMusic}
-                  className="p-2 rounded-xl border bg-studio-panel border-studio-border text-slate-500 hover:text-rose-400 hover:border-rose-500/40 transition"
+                  className="p-2 rounded-xl border bg-studio-panel border-studio-border text-slate-500 hover:text-rose-400 hover:border-rose-500/40 transition focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
                   title={t.removeMusicTooltip}
+                  aria-label={t.removeMusicTooltip}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
               <button
                 onClick={onToggleLoop}
-                className={`p-2 rounded-xl border text-xs transition ${
+                className={`p-2 rounded-xl border text-xs transition focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none ${
                   musicState.isLooping
                     ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
                     : 'bg-studio-panel border-studio-border text-slate-500 hover:text-slate-300'
                 }`}
                 title={t.loopTooltip}
+                aria-label={t.loopTooltip}
               >
                 <Repeat className="w-3.5 h-3.5" />
               </button>

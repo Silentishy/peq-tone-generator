@@ -44,7 +44,8 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
         {fixes.length > 0 && (
           <button
             onClick={onClearAll}
-            className="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1"
+            className="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1 rounded-lg px-1.5 py-0.5 focus-visible:ring-2 focus-visible:ring-rose-400 focus:outline-none"
+            aria-label={t.clearAll}
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>{t.clearAll}</span>
@@ -116,8 +117,9 @@ export const MyFixesList: React.FC<MyFixesListProps> = ({
                       e.stopPropagation();
                       onRemoveFix(fix.id);
                     }}
-                    className="p-1.5 hover:bg-slate-700 text-slate-500 hover:text-rose-400 rounded-lg transition"
+                    className="p-1.5 hover:bg-slate-700 text-slate-500 hover:text-rose-400 rounded-lg transition focus-visible:ring-2 focus-visible:ring-rose-400 focus:outline-none"
                     title={t.deleteTooltip}
+                    aria-label={`${t.deleteTooltip} (${Math.round(fix.frequency)} Hz)`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

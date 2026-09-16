@@ -32,7 +32,8 @@ This app is designed specifically for **regular listeners** who just want their 
   - **Mids (250 Hz – 2 kHz)**: Muddiness, cardboard boxiness, vocal warmth, nasal tones (300 Hz, 450 Hz, 650 Hz, 850 Hz, 1 kHz, 1.5 kHz, 2 kHz).
   - **Every 0.5 kHz from 1.0 kHz to 20.0 kHz**: Granular targeting for ear canal gain, pinna peak, vocal clarity, harshness, and sibilance spikes.
 - **Real-Time 60 FPS Visual EQ Curve & RTA**: Visual display with real-time spectrum analysis dancing to your music.
-- **Full Undo History**: Undo any change (add, edit, delete, clear, or import) with the Undo button or `Ctrl/Cmd + Z`.
+- **Full Undo & Redo with Visual Feedback**: Undo any change with `Ctrl/Cmd + Z` or the header Undo button; redo with `Shift + Ctrl/Cmd + Z` or `Ctrl + Y`. Ephemeral toast notifications confirm every action.
+- **Session State Persistence**: Volume, frequency, tone mode, and equal-loudness calibration persist automatically across page reloads.
 - **Ear Protection Limiter**: Built-in dynamics safety compressor (`DynamicsCompressorNode`) prevents accidental volume blasts.
 - **Bilingual Interface**: Seamless 1-click language dropdown between English and 简体中文.
 - **Export Formats**:

@@ -188,7 +188,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition"
+            aria-label="Close export modal"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
           >
             <X className="w-5 h-5" />
           </button>

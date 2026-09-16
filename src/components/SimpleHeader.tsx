@@ -102,15 +102,17 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
                 </h1>
                 <button
                   onClick={onOpenHelp}
-                  className="text-slate-400 hover:text-cyan-300 transition"
+                  className="text-slate-400 hover:text-cyan-300 transition rounded-lg p-0.5 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
                   title={t.helpTooltip}
+                  aria-label={t.helpTooltip}
                 >
                   <HelpCircle className="w-4 h-4" />
                 </button>
                 <button
                   onClick={onOpenShortcuts}
-                  className="text-slate-400 hover:text-cyan-300 transition"
+                  className="text-slate-400 hover:text-cyan-300 transition rounded-lg p-0.5 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
                   title={t.shortcutsTooltip}
+                  aria-label={t.shortcutsTooltip}
                 >
                   <Keyboard className="w-4 h-4" />
                 </button>
@@ -127,7 +129,9 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
             <div className="relative" ref={langMenuRef}>
               <button
                 onClick={() => setIsLangMenuOpen((prev) => !prev)}
-                className="flex items-center space-x-1 px-2 py-1.5 rounded-lg bg-studio-panel border border-studio-border text-xs font-semibold text-slate-300"
+                className="flex items-center space-x-1 px-2 py-1.5 rounded-lg bg-studio-panel border border-studio-border text-xs font-semibold text-slate-300 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
+                aria-label={lang === 'zh' ? '选择界面语言' : 'Select language'}
+                aria-expanded={isLangMenuOpen}
               >
                 <LanguagesIcon className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="font-mono text-[11px]">{lang === 'zh' ? '中' : 'EN'}</span>
@@ -142,7 +146,7 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
                         setLang(opt.code);
                         setIsLangMenuOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-1.5 text-xs text-left ${
+                      className={`w-full flex items-center justify-between px-3 py-1.5 text-xs text-left focus-visible:bg-cyan-500/15 focus:outline-none ${
                         lang === opt.code ? 'bg-cyan-500/15 text-cyan-300 font-bold' : 'text-slate-300'
                       }`}
                     >
@@ -158,8 +162,9 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
               href="https://github.com/Silentishy/peq-tone-generator"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 rounded-lg bg-studio-panel border border-studio-border text-slate-400 hover:text-white"
+              className="p-1.5 rounded-lg bg-studio-panel border border-studio-border text-slate-400 hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
               title="GitHub"
+              aria-label="GitHub Repository"
             >
               <GitHubIcon className="w-4 h-4" />
             </a>
@@ -181,7 +186,7 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
           {/* Big Start / Stop Tone Button */}
           <button
             onClick={onToggleAudio}
-            className={`flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-md active:scale-95 ${
+            className={`flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-md active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none ${
               isAudioRunning
                 ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-950/50 ring-2 ring-rose-400/40 animate-pulse'
                 : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-950/40 font-black'
@@ -204,8 +209,9 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
           <div className="flex items-center space-x-1.5 sm:space-x-2 bg-studio-panel px-2.5 sm:px-3 py-1.5 rounded-xl border border-studio-border">
             <button
               onClick={() => onVolumeChange(volume === 0 ? 0.25 : 0)}
-              className="text-slate-400 hover:text-cyan-400 transition"
-              title="Mute / Unmute"
+              className="text-slate-400 hover:text-cyan-400 transition p-0.5 rounded focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
+              title={volume === 0 ? 'Unmute' : 'Mute'}
+              aria-label={volume === 0 ? 'Unmute audio' : 'Mute audio'}
             >
               {volume === 0 ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
             </button>
@@ -216,8 +222,9 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
               step="0.02"
               value={volume}
               onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
-              className="w-16 sm:w-20 lg:w-24 h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-cyan-400"
+              className="w-16 sm:w-20 lg:w-24 h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
               title={t.volume}
+              aria-label={t.volume}
             />
             <span className="text-[11px] sm:text-xs font-mono text-slate-300 w-7 text-right">
               {Math.round(volume * 100)}%
@@ -241,12 +248,13 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
           <button
             onClick={onUndo}
             disabled={!canUndo || !onUndo}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition active:scale-95 ${
+            className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none ${
               canUndo
                 ? 'bg-studio-panel border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/15 hover:text-cyan-200 shadow-sm'
                 : 'bg-studio-panel border-studio-border text-slate-500 cursor-default opacity-60'
             }`}
             title={t.undoTooltip}
+            aria-label={t.undoBtn}
           >
             <Undo2 className="w-4 h-4 flex-shrink-0" />
             <span className="hidden sm:inline">{t.undoBtn}</span>
@@ -342,8 +350,9 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
             href="https://github.com/Silentishy/peq-tone-generator"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden lg:flex items-center space-x-1 px-2.5 py-2 rounded-xl bg-studio-panel hover:bg-slate-700 text-slate-300 hover:text-white border border-studio-border text-xs font-semibold transition active:scale-95"
+            className="hidden lg:flex items-center space-x-1 px-2.5 py-2 rounded-xl bg-studio-panel hover:bg-slate-700 text-slate-300 hover:text-white border border-studio-border text-xs font-semibold transition active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-400 focus:outline-none"
             title="View source code on GitHub"
+            aria-label="GitHub Repository"
           >
             <GitHubIcon className="w-4 h-4 text-slate-300" />
             <span>GitHub</span>

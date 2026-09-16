@@ -190,7 +190,12 @@ export interface Translations {
   shortcutBDesc: string;
   shortcutSDesc: string;
   shortcutUndoDesc: string;
+  shortcutRedoDesc: string;
   shortcutCloseBtn: string;
+
+  // Feedback Toast
+  toastUndo: string;
+  toastRedo: string;
 
   // Help Modal
   helpModalTitle: string;
@@ -400,7 +405,12 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shortcutBDesc: 'Instant A/B Compare (Toggle EQ / Bypass)',
     shortcutSDesc: 'Toggle Auto-Scan frequency walker',
     shortcutUndoDesc: 'Undo the last EQ change (add, edit, delete, clear, or import)',
+    shortcutRedoDesc: 'Redo the last undone EQ change',
     shortcutCloseBtn: 'Close',
+
+    // Feedback Toast
+    toastUndo: 'Undid EQ change',
+    toastRedo: 'Redid EQ change',
 
     // Help Modal
     helpModalTitle: 'How to Fix Headphone & Speaker Sound',
@@ -609,7 +619,12 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     shortcutBDesc: '一键 A/B 对比切换 (切换 EQ 修正 / 原声直通)',
     shortcutSDesc: '开启 / 暂停自动频段扫描',
     shortcutUndoDesc: '撤销上一次 EQ 修改（新增、调整、删除、清空或导入）',
+    shortcutRedoDesc: '重做上一次已撤销的 EQ 修改',
     shortcutCloseBtn: '我知道了',
+
+    // Feedback Toast
+    toastUndo: '已撤销 EQ 修改',
+    toastRedo: '已重做 EQ 修改',
 
     // Help Modal
     helpModalTitle: '耳机与音箱 EQ 调音入门指南',
