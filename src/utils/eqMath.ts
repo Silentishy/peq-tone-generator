@@ -582,7 +582,7 @@ export function importFromEqualizerAPO(text: string): { fixes: Partial<EQFix>[];
 }
 
 /**
- * 3-Point Mark-to-Q calculation (eqbyear method)
+ * 3-Point Mark-to-Q calculation
  * Marks:
  *   - start (1): frequency where peak/dip starts
  *   - top (2): center frequency where peak/dip is loudest

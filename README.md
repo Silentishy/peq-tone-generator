@@ -31,7 +31,7 @@ This app is designed specifically for **regular listeners** who just want their 
   - **Bass (< 250 Hz)**: Sub rumble, deep bass, kick thump (30 Hz, 50 Hz, 80 Hz, 125 Hz, 200 Hz).
   - **Mids (250 Hz – 2 kHz)**: Muddiness, cardboard boxiness, vocal warmth, nasal tones (300 Hz, 450 Hz, 650 Hz, 850 Hz, 1 kHz, 1.5 kHz, 2 kHz).
   - **Every 0.5 kHz from 1.0 kHz to 20.0 kHz**: Granular targeting for ear canal gain, pinna peak, vocal clarity, harshness, and sibilance spikes.
-- **3-Point Q Finder (eqbyear method)**: Mark Start `[1]`, Peak/Center `[2]`, and End `[3]` directly while sweeping frequencies to calculate exact filter bandwidth and Q value ($Q = f_c / \Delta f$), complete with visual slider indicators, curve overlay pins, and 1-click apply to Step 2.
+- **3-Point Q Finder**: Mark Start `[1]`, Peak/Center `[2]`, and End `[3]` directly while sweeping frequencies to calculate exact filter bandwidth and Q value ($Q = f_c / \Delta f$), complete with visual slider indicators, curve overlay pins, and 1-click apply to Step 2.
 - **Click-Free Tone Engine & Pre-Filter Preamp**: 15 ms linear anti-pop gain ramps eliminate DC stop/play clicks; preamp is applied prior to biquad filters to guarantee zero internal digital clipping.
 - **Transparent Brickwall Safety Ceiling**: High-precision `WaveShaperNode` ceiling curve (-0.5 dBFS) protects hearing and hardware without dynamic compressor pumping.
 - **Bilingual Interface**: Seamless 1-click language dropdown between English and 简体中文.

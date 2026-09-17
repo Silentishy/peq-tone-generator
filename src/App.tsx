@@ -142,7 +142,7 @@ export const App: React.FC = () => {
     }, 2200);
   }, []);
 
-  // 3-Point Q Measurement State (eqbyear method)
+  // 3-Point Q Measurement State
   const [qMarks, setQMarks] = useState<QMarkState>({});
   const [suggestedQ, setSuggestedQ] = useState<number | null>(null);
   const frequencyRef = useRef<number>(frequency);

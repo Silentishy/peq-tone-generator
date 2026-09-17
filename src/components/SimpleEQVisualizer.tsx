@@ -479,7 +479,7 @@ export const SimpleEQVisualizer: React.FC<SimpleEQVisualizerProps> = ({
         });
       }
 
-      // 5.5. 3-Point Q Finder Marks (eqbyear method)
+      // 5.5. 3-Point Q Finder Marks
       if (showQMarks && qMarks) {
         const hasStart = qMarks.start != null && qMarks.start >= minFreq && qMarks.start <= maxFreq;
         const hasTop = qMarks.top != null && qMarks.top >= minFreq && qMarks.top <= maxFreq;

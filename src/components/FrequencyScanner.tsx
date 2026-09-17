@@ -318,7 +318,7 @@ export const FrequencyScanner: React.FC<FrequencyScannerProps> = ({
         </div>
       </div>
 
-      {/* 3-Point Mark-to-Q Measurement Panel (eqbyear method) */}
+      {/* 3-Point Mark-to-Q Measurement Panel */}
       <div className="bg-studio-surface/80 border border-studio-border/80 rounded-xl p-2.5 sm:p-3 flex flex-col gap-2 transition-all">
         <div className="flex items-center justify-between">
           <button

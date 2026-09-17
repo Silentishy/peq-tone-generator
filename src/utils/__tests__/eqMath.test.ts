@@ -519,7 +519,7 @@ describe('importFromEqualizerAPO', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3-Point Mark-to-Q Calculation (eqbyear method)
+// 3-Point Mark-to-Q Calculation
 // ---------------------------------------------------------------------------
 
 describe('calculateQFromMarks', () => {

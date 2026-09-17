@@ -46,7 +46,7 @@ export interface Translations {
   equalLoudnessTooltip: string;
   pinnaGainNotice: string;
 
-  // 3-Point Q Finder (Step 1 - eqbyear method)
+  // 3-Point Q Finder (Step 1)
   qFinderTitle: string;
   qFinderSubtitle: string;
   qFinderStart: string;
@@ -281,8 +281,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     equalLoudnessTooltip: 'Fletcher-Munson Equal-Loudness Normalization: Normalizes human ear sensitivity so tone sweep feels subjectively even in loudness',
     pinnaGainNotice: 'Note: Human ear canals naturally amplify 2.5k–4.5kHz by 6–10 dB. Only cut if it sounds screeching or noticeably louder than adjacent frequencies.',
 
-    // 3-Point Q Finder (Step 1 - eqbyear method)
-    qFinderTitle: '3-Point Q Finder (eqbyear method)',
+    // 3-Point Q Finder (Step 1)
+    qFinderTitle: '3-Point Q Finder',
     qFinderSubtitle: 'Mark 1 (Start), 2 (Peak), 3 (End) to calculate exact Q',
     qFinderStart: 'Start',
     qFinderTop: 'Peak / Center',
@@ -515,8 +515,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     equalLoudnessTooltip: '等响度曲线补偿：人耳对 3-4kHz 极敏感，对低频和极高频迟钝。开启后动态加权纯音响度，让扫频听感平直，真实硬件峰值更易暴露',
     pinnaGainNotice: '提示：人耳耳道天生会对 2.5k–4.5kHz 放大 6–10 dB (耳廓增益)。只有该处明显炸耳、比临近频段突兀刺痛时才需削减。',
 
-    // 3-Point Q Finder (Step 1 - eqbyear method)
-    qFinderTitle: '三点式 Q 值测算 (eqbyear 算法)',
+    // 3-Point Q Finder (Step 1)
+    qFinderTitle: '三点式 Q 值测算',
     qFinderSubtitle: '分别标记 1 (起)、2 (峰)、3 (止) 精准测算 Q 值',
     qFinderStart: '起始点',
     qFinderTop: '最高尖峰',
